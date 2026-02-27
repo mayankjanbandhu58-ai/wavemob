@@ -1,0 +1,44 @@
+# Wavelength — Python Dependencies
+# Install: pip install -r requirements.txt
+
+# ─── PyTorch CUDA 12.1 ───
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch>=2.1.0
+torchvision>=0.16.0
+torchaudio>=2.1.0
+
+# ─── Medical Image Segmentation ───
+segmentation-models-pytorch>=0.3.3
+
+# ─── ONNX Inference ───
+onnx>=1.15.0
+onnxruntime-gpu>=1.17.0
+
+# ─── Web Framework ───
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+
+# ─── Image Processing ───
+Pillow>=10.2.0
+opencv-python-headless>=4.9.0
+
+# ─── Data & ML ───
+numpy>=1.26.0
+pandas>=2.1.0
+scikit-learn>=1.4.0
+
+# ─── Explainability ───
+grad-cam>=1.5.0
+
+# ─── Report Generation ───
+fpdf2>=2.7.0
+
+# ─── Dataset Download ───
+kaggle>=1.6.0
+
+# ─── Utilities ───
+tqdm>=4.66.0
+pydantic>=2.5.0
+python-dotenv>=1.0.0
+aiofiles>=23.2.0

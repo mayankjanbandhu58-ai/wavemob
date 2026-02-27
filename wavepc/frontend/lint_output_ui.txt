@@ -1,0 +1,37 @@
+
+> frontend@0.1.0 lint
+> eslint
+
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\results\result-modal.tsx
+    2:42  warning  'ImageIcon' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+  147:53  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\learn.tsx
+  113:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\new-scan.tsx
+    3:73  warning  'ImageIcon' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+    3:94  warning  'Database' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+    5:10  warning  'ImageViewer' is defined but never used                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+    6:10  warning  'DiseaseTable' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+    7:10  warning  'RiskBadge' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+    8:10  warning  'UncertaintyIndicator' is defined but never used                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+    9:10  warning  'DiseaseTimeline' is defined but never used                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+   10:10  warning  'ReportDownload' is defined but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+   14:8   warning  'ReactMarkdown' is defined but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   38:12  warning  'preview' is assigned a value but never used                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  388:45  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\patient-reports.tsx
+  47:18  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+  60:18  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\patient-search.tsx
+  2:18  warning  'AnimatePresence' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\training-mode.tsx
+  45:18  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 18 problems (0 errors, 18 warnings)
+

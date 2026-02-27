@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+env/
+
+# Data & Models
+data/
+checkpoints/
+logs/
+*.onnx
+*.pt
+*.pth
+*.jit
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node
+node_modules/
+.next/
+out/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Kaggle
+.kaggle/
+
+# Dataset Images
+frontend/public/dataset/

@@ -1,0 +1,4 @@
+NAME                   ID              SIZE      MODIFIED          
+mistral:7b-instruct    6577803aa9a0    4.4 GB    About an hour ago    
+llama3:8b              365c0bd3c000    4.7 GB    About an hour ago    
+meditron:7b            ad11a6250f54    3.8 GB    2 hours ago          

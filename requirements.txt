@@ -1,0 +1,34 @@
+# Wavelength AI - Android APK Demo
+# This is a Next.js (Node.js) project, so dependencies are installed via `npm install`.
+# This file is provided for reference. See package.json for exact versions.
+
+# Core Frameworks
+next>=15.5.12
+react>=19.0.0
+react-dom>=19.0.0
+
+# Styling & UI
+tailwindcss>=4.0.0
+@tailwindcss/postcss>=4.0.0
+postcss>=8.5.3
+
+# Components & Animation
+lucide-react>=0.475.0
+framer-motion>=12.4.7
+
+# TypeScript & Types
+typescript>=5.0.0
+@types/node>=20.0.0
+@types/react>=19.0.0
+@types/react-dom>=19.0.0
+
+# Android / Capacitor Packaging
+@capacitor/core>=7.0.1
+@capacitor/cli>=7.0.1
+@capacitor/android>=7.0.1
+
+# Minimum System Requirements for Building:
+# - Node.js: v20 LTS or v24 LTS
+# - Java Development Kit (JDK): v21 (required by Capacitor 7)
+# - Android SDK Build Tools: v35.0.0
+# - Android SDK Platform: v36
