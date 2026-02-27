@@ -2,15 +2,14 @@
 
 import { useState, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Activity, AlertTriangle, BarChart2 } from "lucide-react";
-import { Sidebar } from "@/components/sidebar";
+import { Activity, AlertTriangle, BarChart2, ScanLine, History, Info, Waves, Clock, Zap, CheckCircle2, TrendingUp, Users, FileText } from "lucide-react";
 import { UploadZone } from "@/components/upload-zone";
 import { PatientForm } from "@/components/patient-form";
 import { AnalysisScreen } from "@/components/analysis-screen";
 import { AiReport } from "@/components/ai-report";
-import type { ViewType } from "@/components/sidebar";
 import { generateSimulatedReport, type PatientData, type SimulatedReport } from "@/lib/dataset";
 
+type ViewType = "new-scan" | "history" | "analytics" | "about";
 type AppState = "idle" | "preview" | "analyzing" | "results";
 
 interface ScanRecord {
@@ -22,14 +21,15 @@ interface ScanRecord {
 }
 
 const EMPTY_PATIENT: PatientData = {
-    name: "",
-    age: "",
-    gender: "",
-    phone: "",
-    address: "",
-    symptoms: "",
-    smoking_history: "Never",
+    name: "", age: "", gender: "", phone: "", address: "", symptoms: "", smoking_history: "Never",
 };
+
+const NAV = [
+    { id: "new-scan" as ViewType, label: "New Scan", icon: ScanLine },
+    { id: "history" as ViewType, label: "History", icon: History },
+    { id: "analytics" as ViewType, label: "Analytics", icon: BarChart2 },
+    { id: "about" as ViewType, label: "About", icon: Info },
+];
 
 export default function Dashboard() {
     const [currentView, setCurrentView] = useState<ViewType>("new-scan");
@@ -44,14 +44,11 @@ export default function Dashboard() {
 
     const isFormValid = patient.name.trim() && patient.age.trim() && patient.gender;
 
-    /* ── File handlers ─────────────────────────────── */
-    const handleFileSelect = useCallback((selectedFile: File) => {
+    const handleFileSelect = useCallback((f: File) => {
         if (previewBlobRef.current) URL.revokeObjectURL(previewBlobRef.current);
-        const url = URL.createObjectURL(selectedFile);
+        const url = URL.createObjectURL(f);
         previewBlobRef.current = url;
-        setFile(selectedFile);
-        setPreview(url);
-        setAppState("preview");
+        setFile(f); setPreview(url); setAppState("preview");
     }, []);
 
     const handleAnalyze = useCallback(() => {
@@ -63,10 +60,9 @@ export default function Dashboard() {
         if (!file || !preview) return;
         const sim = generateSimulatedReport(file.name, patient);
         setReport(sim);
-
         const record: ScanRecord = {
             id: sim.reportId,
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            timestamp: new Date().toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" }),
             patientData: { ...patient },
             report: sim,
             preview,
@@ -76,407 +72,393 @@ export default function Dashboard() {
     }, [file, preview, patient]);
 
     const handleReset = useCallback(() => {
-        setFile(null);
-        setPreview(null);
-        setAppState("idle");
-        setReport(null);
+        setFile(null); setPreview(null); setAppState("idle"); setReport(null);
         setPatient({ ...EMPTY_PATIENT });
     }, []);
 
-    const handleNewScan = useCallback(() => {
-        handleReset();
-        setCurrentView("new-scan");
-    }, [handleReset]);
+    const handleNewScan = useCallback(() => { handleReset(); setCurrentView("new-scan"); }, [handleReset]);
 
-    /* ── Render ─────────────────────────────────────── */
+    const headerTitle = currentView === "new-scan" ? "New Scan" :
+        currentView === "history" ? "Scan History" :
+            currentView === "analytics" ? "Analytics" : "About";
+
+    const headerSub = currentView === "new-scan" ? "AI-powered chest X-ray analysis" :
+        currentView === "history" ? `${history.length} scan${history.length !== 1 ? "s" : ""} this session` :
+            currentView === "analytics" ? "Session overview" : "System info";
+
     return (
-        <div className="flex w-screen h-screen overflow-hidden bg-gray-50/50">
-            <Sidebar currentView={currentView} onChangeView={setCurrentView} />
+        <div style={{ background: "#F7F7F3", minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
 
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                {/* Disclaimer banner */}
-                <div className="bg-amber-50 border-b border-amber-100 shrink-0">
-                    <div className="px-4 lg:px-6 py-2 flex items-center gap-2">
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <p className="text-[10px] text-amber-700 font-medium">
-                            For clinical decision support only. All findings must be reviewed by qualified medical personnel.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Scrollable content area */}
-                <main className="flex-1 overflow-y-auto p-4 lg:p-8">
-                    {/* Page header */}
-                    <div className="mb-6">
-                        <div className="flex items-center justify-between">
-                            <div className="pl-10 lg:pl-0">
-                                <h2 className="text-xl lg:text-2xl font-bold text-gray-900">
-                                    {currentView === "new-scan" ? "New Scan Analysis"
-                                        : currentView === "history" ? "Scan History"
-                                            : currentView === "analytics" ? "Analytics"
-                                                : "About Wavelength AI"}
-                                </h2>
-                                <p className="text-xs text-gray-400 mt-0.5">
-                                    {currentView === "new-scan" ? "Upload a chest X-ray for AI-powered analysis"
-                                        : currentView === "history" ? `${history.length} scan${history.length !== 1 ? "s" : ""} this session`
-                                            : currentView === "analytics" ? "Session performance overview"
-                                                : "System information and capabilities"}
-                                </p>
-                            </div>
-                            {currentView === "new-scan" && (
-                                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200">
-                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="text-[10px] text-emerald-700 font-bold">AI Pipeline Ready</span>
-                                </div>
-                            )}
+            {/* ── Top Header ──────────────────────────────── */}
+            <header style={{
+                position: "sticky", top: 0, zIndex: 40,
+                background: "#FFFFFF",
+                borderBottom: "1px solid #E8E8E0",
+                boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
+                paddingTop: "env(safe-area-inset-top, 0px)",
+            }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{
+                            width: 36, height: 36, borderRadius: 10,
+                            background: "linear-gradient(135deg,#636B2F,#7a8438)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            boxShadow: "0 2px 8px rgba(99,107,47,0.3)",
+                        }}>
+                            <Waves style={{ width: 18, height: 18, color: "#fff" }} />
+                        </div>
+                        <div>
+                            <h1 style={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a", lineHeight: 1.1 }}>{headerTitle}</h1>
+                            <p style={{ fontSize: 11, color: "#888888", marginTop: 1 }}>{headerSub}</p>
                         </div>
                     </div>
 
-                    {/* View */}
+                    {currentView === "new-scan" && appState !== "results" && (
+                        <div style={{
+                            display: "flex", alignItems: "center", gap: 6,
+                            padding: "5px 10px", borderRadius: 99,
+                            background: "#ECFDF5", border: "1px solid #A7F3D0",
+                        }}>
+                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#059669", animation: "pulse 2s infinite" }} />
+                            <span style={{ fontSize: 10, fontWeight: 700, color: "#065F46" }}>AI Ready</span>
+                        </div>
+                    )}
+                    {currentView === "history" && history.length > 0 && (
+                        <div style={{
+                            padding: "4px 10px", borderRadius: 99,
+                            background: "#EEF0E0", border: "1px solid #C5CC9A",
+                        }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "#636B2F" }}>{history.length} scans</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Disclaimer */}
+                <div style={{ background: "#FFFBEB", borderTop: "1px solid #FDE68A", padding: "7px 20px", display: "flex", alignItems: "center", gap: 7 }}>
+                    <AlertTriangle style={{ width: 12, height: 12, color: "#D97706", flexShrink: 0 }} />
+                    <p style={{ fontSize: 10, color: "#92400E", fontWeight: 500 }}>
+                        Clinical decision support only — findings must be verified by a qualified physician.
+                    </p>
+                </div>
+            </header>
+
+            {/* ── Main scrollable area ─────────────────────── */}
+            <main style={{ flex: 1, overflowY: "auto", paddingBottom: "calc(70px + env(safe-area-inset-bottom, 0px))" }}>
+                <div style={{ maxWidth: 520, margin: "0 auto", padding: "20px 16px" }}>
                     <AnimatePresence mode="wait">
 
-                        {/* ══ NEW SCAN VIEW ══ */}
+                        {/* NEW SCAN */}
                         {currentView === "new-scan" && (
-                            <motion.div
-                                key="new-scan"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="max-w-lg mx-auto space-y-4"
-                            >
-                                {/* Show patient form + upload in idle/preview */}
-                                {(appState === "idle" || appState === "preview") && (
-                                    <>
-                                        <PatientForm
-                                            data={patient}
-                                            onChange={setPatient}
-                                            disabled={false}
-                                        />
-
-                                        {/* Upload zone (unlocked after form filled) */}
-                                        <div className={`relative transition-all duration-300 ${!isFormValid ? "opacity-50 pointer-events-none" : ""}`}>
-                                            {!isFormValid && (
-                                                <div className="absolute inset-0 z-10 flex items-center justify-center">
-                                                    <div className="bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow text-xs font-bold text-gray-500 flex items-center gap-1.5">
-                                                        <span>🔒</span> Complete patient form first
-                                                    </div>
-                                                </div>
-                                            )}
-                                            <UploadZone
-                                                onFileSelect={handleFileSelect}
-                                                file={file}
-                                                preview={preview}
-                                                onReset={handleReset}
-                                            />
+                            <motion.div key="new-scan" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                                {(appState === "idle" || appState === "preview") && (<>
+                                    <PatientForm data={patient} onChange={setPatient} disabled={false} />
+                                    <UploadZone onFileSelect={handleFileSelect} file={file} preview={preview} onReset={handleReset} />
+                                    {!isFormValid && appState === "idle" && (
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 14 }}>
+                                            <span style={{ fontSize: 14 }}>🔒</span>
+                                            <p style={{ fontSize: 12, color: "#92400E", fontWeight: 500 }}>Fill in patient name, age and gender to unlock image upload</p>
                                         </div>
+                                    )}
+                                    {appState === "preview" && file && isFormValid && (
+                                        <motion.button
+                                            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                                            whileTap={{ scale: 0.98 }} onClick={handleAnalyze}
+                                            className="btn-primary"
+                                            style={{ fontSize: 16, padding: "16px 20px" }}
+                                        >
+                                            <Activity style={{ width: 20, height: 20 }} />
+                                            Run AI Analysis
+                                        </motion.button>
+                                    )}
+                                </>)}
 
-                                        {/* Analyze button */}
-                                        {appState === "preview" && file && isFormValid && (
-                                            <motion.button
-                                                initial={{ opacity: 0, scale: 0.95 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                whileTap={{ scale: 0.98 }}
-                                                onClick={handleAnalyze}
-                                                className="w-full py-4 rounded-xl gradient-olive-glow text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-olive/20 hover:shadow-xl transition-shadow"
-                                            >
-                                                <Activity className="w-5 h-5" />
-                                                Run AI Analysis
-                                            </motion.button>
-                                        )}
-                                    </>
-                                )}
-
-                                {/* Results — full AI report */}
                                 {appState === "results" && report && preview && (
-                                    <AiReport
-                                        report={report}
-                                        imagePreview={preview}
-                                        onNewScan={handleNewScan}
-                                    />
+                                    <AiReport report={report} imagePreview={preview} onNewScan={handleNewScan} />
                                 )}
                             </motion.div>
                         )}
 
-                        {/* ══ HISTORY VIEW ══ */}
+                        {/* HISTORY */}
                         {currentView === "history" && (
-                            <motion.div
-                                key="history"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="max-w-lg mx-auto"
-                            >
-                                <HistoryView
-                                    history={history}
-                                    onOpenScan={setSelectedHistory}
-                                />
+                            <motion.div key="history" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                                <HistoryView history={history} onOpenScan={setSelectedHistory} />
                             </motion.div>
                         )}
 
-                        {/* ══ ANALYTICS VIEW ══ */}
+                        {/* ANALYTICS */}
                         {currentView === "analytics" && (
-                            <motion.div
-                                key="analytics"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="max-w-lg mx-auto"
-                            >
+                            <motion.div key="analytics" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                                 <AnalyticsView history={history} />
                             </motion.div>
                         )}
 
-                        {/* ══ ABOUT VIEW ══ */}
+                        {/* ABOUT */}
                         {currentView === "about" && (
-                            <motion.div
-                                key="about"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="max-w-lg mx-auto"
-                            >
+                            <motion.div key="about" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                                 <AboutView />
                             </motion.div>
                         )}
 
                     </AnimatePresence>
-                </main>
-            </div>
+                </div>
+            </main>
 
-            {/* ── Full-screen analysis overlay ──────────── */}
+            {/* ── Bottom Navigation ───────────────────────── */}
+            <nav className="bottom-nav">
+                {NAV.map(item => {
+                    const active = currentView === item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => setCurrentView(item.id)}
+                            style={{
+                                flex: 1, display: "flex", flexDirection: "column",
+                                alignItems: "center", justifyContent: "center",
+                                gap: 4, padding: "10px 0 12px",
+                                background: "none", border: "none", cursor: "pointer",
+                                transition: "all 0.15s",
+                            }}
+                        >
+                            <div style={{
+                                width: 40, height: 28, borderRadius: 10,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                background: active ? "#EEF0E0" : "transparent",
+                                transition: "background 0.15s",
+                            }}>
+                                <item.icon style={{ width: 20, height: 20, color: active ? "#636B2F" : "#AAAAAA" }} />
+                            </div>
+                            <span style={{ fontSize: 10, fontWeight: active ? 700 : 500, color: active ? "#636B2F" : "#AAAAAA" }}>
+                                {item.label}
+                            </span>
+                        </button>
+                    );
+                })}
+            </nav>
+
+            {/* ── Analysis overlay ────────────────────────── */}
             <AnimatePresence>
                 {appState === "analyzing" && file && preview && (
-                    <AnalysisScreen
-                        imagePreview={preview}
-                        fileName={file.name}
-                        onComplete={handleAnalysisComplete}
-                    />
+                    <AnalysisScreen imagePreview={preview} fileName={file.name} onComplete={handleAnalysisComplete} />
                 )}
             </AnimatePresence>
 
-            {/* ── History detail modal ───────────────────── */}
+            {/* ── History detail modal ─────────────────────── */}
             <AnimatePresence>
                 {selectedHistory && (
-                    <HistoryModal
-                        scan={selectedHistory}
-                        onClose={() => setSelectedHistory(null)}
-                    />
+                    <HistoryModal scan={selectedHistory} onClose={() => setSelectedHistory(null)} />
                 )}
             </AnimatePresence>
         </div>
     );
 }
 
-/* ═══════════════════════════════════════════════════
-   History View
-   ═══════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   HISTORY VIEW
+   ══════════════════════════════════════════════ */
 function HistoryView({ history, onOpenScan }: { history: ScanRecord[]; onOpenScan: (s: ScanRecord) => void }) {
-    const riskColor: Record<string, string> = {
-        "High Suspicion": "text-red-600 bg-red-50 border-red-200",
-        "Moderate Risk": "text-amber-600 bg-amber-50 border-amber-200",
-        "Low Risk": "text-emerald-600 bg-emerald-50 border-emerald-200",
-    };
-
     if (history.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-16 rounded-2xl border-2 border-dashed border-gray-200 bg-white">
-                <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-                    <Activity className="w-7 h-7 text-gray-300" />
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", background: "#FFFFFF", borderRadius: 20, border: "2px dashed #E5E5DC" }}>
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: "#F5F5EF", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                    <History style={{ width: 28, height: 28, color: "#CCCCBC" }} />
                 </div>
-                <h3 className="text-sm font-bold text-gray-600 mb-1">No Scans This Session</h3>
-                <p className="text-xs text-gray-400 text-center max-w-[200px]">
-                    Complete a patient scan to see results here.
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#555555", marginBottom: 6 }}>No Scans This Session</h3>
+                <p style={{ fontSize: 12, color: "#999999", textAlign: "center", maxWidth: 200, lineHeight: 1.5 }}>
+                    Complete a scan to see your history here.
                 </p>
             </div>
         );
     }
 
+    const riskStyle: Record<string, { color: string; bg: string; border: string }> = {
+        "High Suspicion": { color: "#991B1B", bg: "#FEE2E2", border: "#FECACA" },
+        "Moderate Risk": { color: "#92400E", bg: "#FEF3C7", border: "#FDE68A" },
+        "Low Risk": { color: "#065F46", bg: "#D1FAE5", border: "#A7F3D0" },
+    };
+
     return (
-        <div className="space-y-3">
-            {history.map((scan, i) => (
-                <motion.div
-                    key={scan.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    onClick={() => onOpenScan(scan)}
-                    className="flex items-center gap-4 p-4 rounded-xl card-elevated hover:shadow-md transition-shadow cursor-pointer"
-                >
-                    <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden border border-gray-200 shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={scan.preview} alt={scan.patientData.name} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-gray-800 truncate">{scan.patientData.name || "Anonymous"}</p>
-                        <p className="text-[10px] text-gray-400">{scan.timestamp} · {scan.patientData.age && `Age ${scan.patientData.age}`}</p>
-                        <p className="text-[10px] font-mono text-olive">{scan.id}</p>
-                    </div>
-                    <div className="shrink-0">
-                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${riskColor[scan.report.riskLevel]}`}>
-                            {scan.report.riskLevel}
-                        </span>
-                    </div>
-                </motion.div>
-            ))}
-            <p className="text-center text-[10px] text-gray-400 pt-2">
-                Tap a record to view full report
-            </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {history.map((scan, i) => {
+                const rs = riskStyle[scan.report.riskLevel] ?? riskStyle["Low Risk"];
+                return (
+                    <motion.div key={scan.id}
+                        initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        onClick={() => onOpenScan(scan)}
+                        style={{
+                            display: "flex", alignItems: "center", gap: 14,
+                            padding: "14px 16px", background: "#FFFFFF",
+                            borderRadius: 18, border: "1px solid #E8E8E0",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                            cursor: "pointer",
+                        }}
+                    >
+                        <div style={{ width: 52, height: 52, borderRadius: 12, overflow: "hidden", background: "#111", border: "1px solid #E5E5DC", flexShrink: 0 }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={scan.preview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 14, fontWeight: 700, color: "#111111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                {scan.patientData.name || "Anonymous"}
+                            </p>
+                            <p style={{ fontSize: 11, color: "#888888", marginTop: 2 }}>
+                                {scan.timestamp} · Age {scan.patientData.age}
+                            </p>
+                            <p style={{ fontSize: 10, color: "#636B2F", fontFamily: "monospace", marginTop: 2 }}>{scan.id}</p>
+                        </div>
+                        <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 99, background: rs.bg, color: rs.color, border: `1px solid ${rs.border}` }}>
+                                {scan.report.riskLevel.split(" ")[0]}
+                            </span>
+                            <span style={{ fontSize: 10, color: "#AAAAAA" }}>Tap to view →</span>
+                        </div>
+                    </motion.div>
+                );
+            })}
         </div>
     );
 }
 
-/* ═══════════════════════════════════════════════════
-   History Detail Modal
-   ═══════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   HISTORY MODAL
+   ══════════════════════════════════════════════ */
 function HistoryModal({ scan, onClose }: { scan: ScanRecord; onClose: () => void }) {
     return (
         <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
+            style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 env(safe-area-inset-bottom,0px)" }}
         >
             <motion.div
-                initial={{ y: 60, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 60, opacity: 0 }}
+                initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
                 onClick={e => e.stopPropagation()}
-                className="w-full max-w-lg bg-white rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+                style={{ width: "100%", maxWidth: 520, background: "#FFFFFF", borderRadius: "24px 24px 0 0", maxHeight: "92dvh", overflow: "hidden", display: "flex", flexDirection: "column" }}
             >
-                {/* Modal header */}
-                <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between z-10">
-                    <h3 className="text-sm font-bold text-gray-900">Scan Report</h3>
-                    <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600 font-bold px-3 py-1 rounded-lg hover:bg-gray-100">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #E8E8E0", flexShrink: 0, background: "#FFFFFF" }}>
+                    <div>
+                        <h3 style={{ fontSize: 15, fontWeight: 700, color: "#111111" }}>Scan Report</h3>
+                        <p style={{ fontSize: 11, color: "#888888", marginTop: 1 }}>{scan.patientData.name} · {scan.timestamp}</p>
+                    </div>
+                    <button onClick={onClose} style={{ padding: "6px 12px", borderRadius: 10, background: "#F5F5EF", border: "1px solid #E5E5DC", fontSize: 12, fontWeight: 600, color: "#555555", cursor: "pointer" }}>
                         Close ✕
                     </button>
                 </div>
-                <div className="p-4">
-                    <AiReport
-                        report={scan.report}
-                        imagePreview={scan.preview}
-                        onNewScan={onClose}
-                    />
+                <div style={{ overflowY: "auto", padding: 16 }}>
+                    <AiReport report={scan.report} imagePreview={scan.preview} onNewScan={onClose} />
                 </div>
             </motion.div>
         </motion.div>
     );
 }
 
-/* ═══════════════════════════════════════════════════
-   Analytics View
-   ═══════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   ANALYTICS VIEW
+   ══════════════════════════════════════════════ */
 function AnalyticsView({ history }: { history: ScanRecord[] }) {
     const total = history.length;
-    const highCount = history.filter(s => s.report.riskLevel === "High Suspicion").length;
-    const modCount = history.filter(s => s.report.riskLevel === "Moderate Risk").length;
-    const lowCount = history.filter(s => s.report.riskLevel === "Low Risk").length;
-    const avgConf = total > 0
-        ? history.reduce((acc, s) => acc + s.report.confidenceScore, 0) / total
-        : 0;
-    const topDisease = total > 0
-        ? history.reduce((acc: Record<string, number>, s) => {
-            const d = s.report.topDisease;
-            acc[d] = (acc[d] || 0) + 1;
-            return acc;
-        }, {})
-        : {};
-    const topDx = Object.entries(topDisease).sort(([, a], [, b]) => b - a)[0]?.[0] ?? "—";
+    const high = history.filter(s => s.report.riskLevel === "High Suspicion").length;
+    const mod = history.filter(s => s.report.riskLevel === "Moderate Risk").length;
+    const low = history.filter(s => s.report.riskLevel === "Low Risk").length;
+    const avgConf = total > 0 ? history.reduce((a, s) => a + s.report.confidenceScore, 0) / total : 0;
+    const avgTime = total > 0 ? history.reduce((a, s) => a + s.report.inferenceTimeMs, 0) / total : 0;
 
-    const stats = [
-        { label: "Total Scans", value: total.toString(), color: "text-olive" },
-        { label: "High Risk", value: highCount.toString(), color: "text-red-600" },
-        { label: "Moderate", value: modCount.toString(), color: "text-amber-600" },
-        { label: "Low Risk", value: lowCount.toString(), color: "text-emerald-600" },
-        { label: "Avg Confidence", value: total > 0 ? `${avgConf.toFixed(1)}%` : "—", color: "text-indigo-600" },
-        { label: "Top Finding", value: topDx, color: "text-gray-800" },
-    ];
+    const diseaseMap = history.reduce((acc: Record<string, number>, s) => {
+        acc[s.report.topDisease] = (acc[s.report.topDisease] || 0) + 1;
+        return acc;
+    }, {});
+    const topDx = Object.entries(diseaseMap).sort(([, a], [, b]) => b - a)[0]?.[0] ?? "—";
 
     if (total === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-16 rounded-2xl border-2 border-dashed border-gray-200 bg-white">
-                <BarChart2 className="w-12 h-12 text-gray-200 mb-4" />
-                <h3 className="text-sm font-bold text-gray-600 mb-1">No Data Yet</h3>
-                <p className="text-xs text-gray-400 text-center max-w-[200px]">
-                    Run at least one scan to see analytics.
-                </p>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", background: "#FFFFFF", borderRadius: 20, border: "2px dashed #E5E5DC" }}>
+                <BarChart2 style={{ width: 44, height: 44, color: "#DDDDDD", marginBottom: 12 }} />
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#555555", marginBottom: 6 }}>No Data Yet</h3>
+                <p style={{ fontSize: 12, color: "#999999", textAlign: "center" }}>Run at least one scan to see analytics.</p>
             </div>
         );
     }
 
+    const statCards = [
+        { label: "Total Scans", value: total.toString(), color: "#636B2F", bg: "#EEF0E0", icon: Users },
+        { label: "High Suspicion", value: high.toString(), color: "#DC2626", bg: "#FEE2E2", icon: AlertTriangle },
+        { label: "Moderate Risk", value: mod.toString(), color: "#D97706", bg: "#FEF3C7", icon: ScanLine },
+        { label: "Low Risk", value: low.toString(), color: "#059669", bg: "#D1FAE5", icon: CheckCircle2 },
+        { label: "Avg Confidence", value: `${avgConf.toFixed(1)}%`, color: "#4F46E5", bg: "#EEF2FF", icon: Zap },
+        { label: "Avg Inference", value: `${(avgTime / 1000).toFixed(2)}s`, color: "#0891B2", bg: "#ECFEFF", icon: Clock },
+    ];
+
     return (
-        <div className="space-y-5">
-            {/* Stats grid */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {stats.map((s, i) => (
-                    <motion.div
-                        key={s.label}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Stats 2x3 grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                {statCards.map((s, i) => (
+                    <motion.div key={s.label}
+                        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: i * 0.05 }}
-                        className="rounded-2xl card-elevated p-4 flex flex-col gap-1"
+                        style={{ background: s.bg, border: `1px solid ${s.color}22`, borderRadius: 16, padding: "14px 12px", display: "flex", flexDirection: "column", gap: 6 }}
                     >
-                        <span className={`text-xl font-black truncate ${s.color}`}>{s.value}</span>
-                        <span className="text-[10px] text-gray-400 font-medium">{s.label}</span>
+                        <s.icon style={{ width: 16, height: 16, color: s.color }} />
+                        <span style={{ fontSize: 20, fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.value}</span>
+                        <span style={{ fontSize: 9, fontWeight: 600, color: "#777777", lineHeight: 1.3 }}>{s.label}</span>
                     </motion.div>
                 ))}
             </div>
 
-            {/* Risk distribution bar */}
-            {total > 0 && (
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="rounded-2xl card-elevated p-5"
-                >
-                    <h3 className="text-xs font-bold text-gray-700 mb-4 uppercase tracking-wider">Risk Distribution</h3>
-                    <div className="h-4 rounded-full overflow-hidden flex gap-0.5">
-                        {highCount > 0 && (
-                            <div className="bg-red-400 h-full" style={{ width: `${(highCount / total) * 100}%` }} title="High" />
-                        )}
-                        {modCount > 0 && (
-                            <div className="bg-amber-400 h-full" style={{ width: `${(modCount / total) * 100}%` }} title="Moderate" />
-                        )}
-                        {lowCount > 0 && (
-                            <div className="bg-emerald-400 h-full" style={{ width: `${(lowCount / total) * 100}%` }} title="Low" />
-                        )}
-                    </div>
-                    <div className="flex items-center gap-4 mt-3">
-                        {[
-                            { label: "High", color: "bg-red-400", count: highCount },
-                            { label: "Moderate", color: "bg-amber-400", count: modCount },
-                            { label: "Low", color: "bg-emerald-400", count: lowCount },
-                        ].map(r => (
-                            <div key={r.label} className="flex items-center gap-1.5">
-                                <div className={`w-2.5 h-2.5 rounded-full ${r.color}`} />
-                                <span className="text-[10px] text-gray-600 font-medium">{r.label} ({r.count})</span>
-                            </div>
-                        ))}
-                    </div>
-                </motion.div>
-            )}
-
-            {/* Recent scan list */}
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="rounded-2xl card-elevated divide-y divide-gray-100 overflow-hidden"
-            >
-                <div className="px-5 py-3 bg-gray-50">
-                    <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Recent Scans</h3>
+            {/* Risk distribution */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                style={{ background: "#FFFFFF", borderRadius: 20, border: "1px solid #E8E8E0", padding: "18px 20px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                    <TrendingUp style={{ width: 16, height: 16, color: "#636B2F" }} />
+                    <h3 style={{ fontSize: 12, fontWeight: 700, color: "#111111", textTransform: "uppercase", letterSpacing: "0.06em" }}>Risk Distribution</h3>
                 </div>
-                {history.slice(0, 5).map((scan, i) => (
-                    <div key={scan.id} className="px-5 py-3 flex items-center gap-3">
-                        <span className="text-xs text-gray-400 w-4 shrink-0">{i + 1}</span>
-                        <p className="text-xs font-semibold text-gray-800 flex-1 truncate">{scan.patientData.name || "Anonymous"}</p>
-                        <p className="text-[10px] text-gray-400 shrink-0">{scan.report.topDisease}</p>
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${scan.report.riskLevel === "High Suspicion" ? "bg-red-100 text-red-600"
-                            : scan.report.riskLevel === "Moderate Risk" ? "bg-amber-100 text-amber-600"
-                                : "bg-emerald-100 text-emerald-600"
-                            }`}>
+                <div style={{ height: 12, borderRadius: 99, overflow: "hidden", display: "flex", gap: 2, marginBottom: 12 }}>
+                    {high > 0 && <div style={{ flex: high, background: "#EF4444", borderRadius: 99 }} />}
+                    {mod > 0 && <div style={{ flex: mod, background: "#F59E0B", borderRadius: 99 }} />}
+                    {low > 0 && <div style={{ flex: low, background: "#10B981", borderRadius: 99 }} />}
+                </div>
+                <div style={{ display: "flex", gap: 16 }}>
+                    {[{ label: "High", color: "#EF4444", count: high }, { label: "Moderate", color: "#F59E0B", count: mod }, { label: "Low", color: "#10B981", count: low }].map(r => (
+                        <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ width: 10, height: 10, borderRadius: "50%", background: r.color }} />
+                            <span style={{ fontSize: 11, color: "#555555", fontWeight: 600 }}>{r.label} ({r.count})</span>
+                        </div>
+                    ))}
+                </div>
+            </motion.div>
+
+            {/* Top finding */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+                style={{ background: "#EEF0E0", borderRadius: 18, border: "1.5px solid #C5CC9A", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                    <p style={{ fontSize: 11, color: "#636B2F", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Most Common Finding</p>
+                    <p style={{ fontSize: 18, fontWeight: 900, color: "#2a3010" }}>{topDx}</p>
+                </div>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: "#636B2F", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <FileText style={{ width: 22, height: 22, color: "#fff" }} />
+                </div>
+            </motion.div>
+
+            {/* Scan log */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+                style={{ background: "#FFFFFF", borderRadius: 20, border: "1px solid #E8E8E0", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                <div style={{ padding: "14px 20px", background: "#F7F7F3", borderBottom: "1px solid #EEEEEA" }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, color: "#555555", textTransform: "uppercase", letterSpacing: "0.06em" }}>Recent Scans</h3>
+                </div>
+                {history.slice(0, 6).map((scan, i) => (
+                    <div key={scan.id} style={{
+                        display: "flex", alignItems: "center", gap: 12, padding: "12px 20px",
+                        borderBottom: i < Math.min(history.length, 6) - 1 ? "1px solid #F0F0EA" : "none"
+                    }}>
+                        <span style={{ fontSize: 12, color: "#CCCCBC", width: 16, fontWeight: 700 }}>{i + 1}</span>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#222222", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {scan.patientData.name || "Anonymous"}
+                        </p>
+                        <p style={{ fontSize: 10, color: "#888888", flexShrink: 0, maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{scan.report.topDisease}</p>
+                        <span style={{
+                            fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 99, flexShrink: 0,
+                            background: scan.report.riskLevel === "High Suspicion" ? "#FEE2E2" : scan.report.riskLevel === "Moderate Risk" ? "#FEF3C7" : "#D1FAE5",
+                            color: scan.report.riskLevel === "High Suspicion" ? "#991B1B" : scan.report.riskLevel === "Moderate Risk" ? "#92400E" : "#065F46",
+                        }}>
                             {scan.report.riskLevel.split(" ")[0]}
                         </span>
                     </div>
@@ -486,52 +468,87 @@ function AnalyticsView({ history }: { history: ScanRecord[] }) {
     );
 }
 
-/* ═══════════════════════════════════════════════════
-   About View
-   ═══════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   ABOUT VIEW
+   ══════════════════════════════════════════════ */
 function AboutView() {
     const specs = [
         { label: "AI Model", value: "DenseNet-121 + EfficientNet-B4 Ensemble" },
         { label: "Training Data", value: "NIH ChestX-ray14 (112,120 images)" },
-        { label: "Pathologies", value: "8 multi-label conditions" },
+        { label: "Pathologies", value: "8 multi-label conditions detected" },
         { label: "Inference", value: "On-device, fully offline" },
         { label: "Uncertainty", value: "Monte Carlo Dropout (n=50)" },
-        { label: "Calibration", value: "Platt Scaling" },
+        { label: "Calibration", value: "Platt Scaling applied" },
         { label: "Report Format", value: "Structured PDF + AI Narrative" },
-        { label: "Version", value: "2.0.0 (Mobile Demo)" },
+        { label: "Version", value: "2.1.0 — Mobile Demo" },
     ];
 
+    const features = ["Multi-label pathology detection", "Confidence scoring per finding", "Clinical + patient report modes", "Grad-CAM heatmap simulation", "Longitudinal tracking", "PDF report download", "Session analytics dashboard"];
+
     return (
-        <div className="space-y-5">
-            <div className="rounded-2xl card-elevated p-6 text-center">
-                <div className="w-16 h-16 rounded-2xl gradient-olive mx-auto mb-4 flex items-center justify-center shadow-xl animate-pulse-glow">
-                    <span className="text-2xl">🫁</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Hero */}
+            <div style={{ background: "#FFFFFF", borderRadius: 22, border: "1px solid #E8E8E0", padding: 24, textAlign: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                <div style={{ width: 64, height: 64, borderRadius: 18, background: "linear-gradient(135deg,#636B2F,#7a8438)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", boxShadow: "0 4px 20px rgba(99,107,47,0.3)" }}>
+                    <span style={{ fontSize: 28 }}>🫁</span>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-1">Wavelength AI</h3>
-                <p className="text-xs text-gray-400 max-w-xs mx-auto">
-                    AI-powered multi-disease chest X-ray screening for rapid clinical decision support in resource-limited settings.
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: "#111111", marginBottom: 8 }}>Wavelength AI</h3>
+                <p style={{ fontSize: 13, color: "#666666", lineHeight: 1.6, maxWidth: 280, margin: "0 auto" }}>
+                    AI-powered multi-disease chest X-ray screening for rapid clinical decision support.
                 </p>
             </div>
 
-            <div className="rounded-xl card-elevated divide-y divide-gray-100">
+            {/* Features */}
+            <div style={{ background: "#EEF0E0", borderRadius: 20, border: "1.5px solid #C5CC9A", padding: "18px 20px" }}>
+                <h3 style={{ fontSize: 11, fontWeight: 700, color: "#636B2F", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>Key Features</h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {features.map((f, i) => (
+                        <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
+                            style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <CheckCircle2 style={{ width: 16, height: 16, color: "#636B2F", flexShrink: 0 }} />
+                            <span style={{ fontSize: 13, color: "#2a3010", fontWeight: 500 }}>{f}</span>
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Tech specs */}
+            <div style={{ background: "#FFFFFF", borderRadius: 20, border: "1px solid #E8E8E0", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                <div style={{ padding: "14px 20px", background: "#F7F7F3", borderBottom: "1px solid #EEEEEA" }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, color: "#555555", textTransform: "uppercase", letterSpacing: "0.06em" }}>Technical Specifications</h3>
+                </div>
                 {specs.map((spec, i) => (
-                    <motion.div
-                        key={i}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: i * 0.04 }}
-                        className="flex items-center justify-between px-4 py-3"
-                    >
-                        <span className="text-xs text-gray-400">{spec.label}</span>
-                        <span className="text-xs text-gray-800 font-medium text-right max-w-[55%]">{spec.value}</span>
+                    <motion.div key={i}
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}
+                        style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "12px 20px", borderBottom: i < specs.length - 1 ? "1px solid #F0F0EA" : "none", gap: 12 }}>
+                        <span style={{ fontSize: 12, color: "#888888", flexShrink: 0 }}>{spec.label}</span>
+                        <span style={{ fontSize: 12, color: "#222222", fontWeight: 600, textAlign: "right" }}>{spec.value}</span>
                     </motion.div>
                 ))}
             </div>
 
-            <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
-                <p className="text-[10px] text-amber-700 leading-relaxed text-center">
-                    This is an offline demo application. AI analysis is simulated using pre-generated PDF reports matched by filename.
-                    In production, Wavelength AI uses a Python FastAPI backend with real-time DenseNet inference and Grad-CAM heatmaps.
+            {/* Dataset info */}
+            <div style={{ background: "#EFF6FF", borderRadius: 18, border: "1px solid #BFDBFE", padding: "16px 20px" }}>
+                <h3 style={{ fontSize: 11, fontWeight: 700, color: "#1D4ED8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Dataset</h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {[
+                        { k: "Images", v: "20 annotated chest X-rays" },
+                        { k: "Labels", v: "High / Moderate / Low risk" },
+                        { k: "Reports", v: "Pre-generated PDF for each scan" },
+                        { k: "Source", v: "NIH ChestX-ray14 derived subset" },
+                    ].map(row => (
+                        <div key={row.k} style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 12, color: "#3B82F6" }}>{row.k}</span>
+                            <span style={{ fontSize: 12, color: "#1D4ED8", fontWeight: 600 }}>{row.v}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Disclaimer */}
+            <div style={{ background: "#FFFBEB", borderRadius: 16, border: "1px solid #FDE68A", padding: "14px 16px" }}>
+                <p style={{ fontSize: 11, color: "#92400E", lineHeight: 1.6, textAlign: "center" }}>
+                    <strong>⚠ Offline Demo.</strong> Analysis is simulated using pre-generated reports matched by filename. In production, Wavelength AI uses a Python FastAPI backend with real-time DenseNet inference.
                 </p>
             </div>
         </div>

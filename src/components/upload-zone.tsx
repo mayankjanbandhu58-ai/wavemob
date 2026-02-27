@@ -2,7 +2,7 @@
 
 import { useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { Upload, X, Image as ImageIcon, FileWarning } from "lucide-react";
+import { Upload, X, Image as ImageIcon } from "lucide-react";
 
 interface UploadZoneProps {
     onFileSelect: (file: File) => void;
@@ -30,50 +30,60 @@ export function UploadZone({ onFileSelect, file, preview, onReset }: UploadZoneP
         if (f) handleFile(f);
     }, [handleFile]);
 
-    /* Preview */
+    /* ── Preview state ─── */
     if (preview && file) {
         return (
             <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-2xl overflow-hidden"
-                style={{ border: "1px solid #E5E5DC", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}
+                style={{ background: "#FFFFFF", borderRadius: 20, overflow: "hidden", border: "1px solid #E8E8E0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
             >
-                <div className="relative">
+                <div style={{ position: "relative" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={preview} alt="X-Ray" className="w-full object-cover" style={{ maxHeight: 240 }} />
+                    <img src={preview} alt="X-Ray" style={{ width: "100%", height: 220, objectFit: "cover", display: "block" }} />
+
+                    {/* Gradient overlay */}
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 60%)" }} />
 
                     {/* Corner brackets */}
-                    {["top-2 left-2 border-t-2 border-l-2", "top-2 right-2 border-t-2 border-r-2",
-                        "bottom-2 left-2 border-b-2 border-l-2", "bottom-2 right-2 border-b-2 border-r-2"
-                    ].map((cls, i) => (
-                        <div key={i} className={`absolute ${cls} w-5 h-5 border-white/80 rounded-sm`} />
+                    {[
+                        { top: 12, left: 12, borderTop: "2.5px solid rgba(255,255,255,0.7)", borderLeft: "2.5px solid rgba(255,255,255,0.7)" },
+                        { top: 12, right: 12, borderTop: "2.5px solid rgba(255,255,255,0.7)", borderRight: "2.5px solid rgba(255,255,255,0.7)" },
+                        { bottom: 12, left: 12, borderBottom: "2.5px solid rgba(255,255,255,0.7)", borderLeft: "2.5px solid rgba(255,255,255,0.7)" },
+                        { bottom: 12, right: 12, borderBottom: "2.5px solid rgba(255,255,255,0.7)", borderRight: "2.5px solid rgba(255,255,255,0.7)" },
+                    ].map((s, i) => (
+                        <div key={i} style={{ position: "absolute", width: 20, height: 20, borderRadius: 3, ...s }} />
                     ))}
 
                     {/* Scan line */}
-                    <div className="animate-scan-line" style={{
-                        background: "linear-gradient(90deg, transparent, rgba(99,107,47,0.6), transparent)",
-                        filter: "blur(1px)"
-                    }} />
+                    <div className="animate-scan-line" style={{ background: "linear-gradient(90deg, transparent, rgba(99,107,47,0.8), transparent)" }} />
 
                     {/* Remove button */}
-                    <button onClick={onReset}
-                        className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-white/90 border border-gray-200 flex items-center justify-center shadow-sm">
-                        <X className="w-4 h-4 text-gray-600" />
+                    <button onClick={onReset} style={{ position: "absolute", top: 10, right: 10, width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", backdropFilter: "blur(4px)" }}>
+                        <X style={{ width: 14, height: 14, color: "#333333" }} />
                     </button>
+
+                    {/* File info */}
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 16px", display: "flex", alignItems: "center", gap: 8 }}>
+                        <ImageIcon style={{ width: 14, height: 14, color: "rgba(255,255,255,0.8)", flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.9)", fontWeight: 600, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E" }} />
+                            <span style={{ fontSize: 11, color: "#4ADE80", fontWeight: 700 }}>Ready</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="px-4 py-3 flex items-center gap-2.5">
-                    <ImageIcon className="w-4 h-4 shrink-0" style={{ color: "#636B2F" }} />
-                    <span className="text-sm font-medium text-gray-700 truncate">{file.name}</span>
-                    <div className="ml-auto flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-xs text-emerald-600 font-semibold">Ready</span>
+                {/* Bottom bar */}
+                <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ flex: 1, height: 4, borderRadius: 99, background: "#EEEEEA", overflow: "hidden" }}>
+                        <div style={{ width: "100%", height: "100%", borderRadius: 99, background: "linear-gradient(90deg,#636B2F,#8A9340)" }} />
                     </div>
+                    <span style={{ fontSize: 11, color: "#636B2F", fontWeight: 700 }}>Image loaded — tap Analyze</span>
                 </div>
             </motion.div>
         );
     }
 
-    /* Drop zone */
+    /* ── Drop zone ─── */
     return (
         <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -81,28 +91,30 @@ export function UploadZone({ onFileSelect, file, preview, onReset }: UploadZoneP
             onDrop={handleDrop}
             onDragOver={e => e.preventDefault()}
             onClick={() => inputRef.current?.click()}
-            className="bg-white rounded-2xl p-8 flex flex-col items-center text-center cursor-pointer transition-all"
             style={{
-                border: "2px dashed #C5CC9A",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
+                background: "#FFFFFF", borderRadius: 20, border: "2px dashed #C5CC9A",
+                padding: "36px 24px", display: "flex", flexDirection: "column",
+                alignItems: "center", textAlign: "center", cursor: "pointer",
+                transition: "all 0.2s",
             }}
         >
-            <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/jpg" className="hidden" onChange={handleChange} />
+            <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/jpg" style={{ display: "none" }} onChange={handleChange} />
 
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 animate-pulse-glow"
-                style={{ background: "#EEF0E0", border: "1.5px solid #C5CC9A" }}>
-                <Upload className="w-7 h-7" style={{ color: "#636B2F" }} />
+            <div style={{ width: 64, height: 64, borderRadius: 20, background: "#EEF0E0", border: "1.5px solid #C5CC9A", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                <Upload style={{ width: 28, height: 28, color: "#636B2F" }} />
             </div>
 
-            <h3 className="text-sm font-bold text-gray-800 mb-1">Upload Chest X-Ray</h3>
-            <p className="text-xs text-gray-500 mb-4 max-w-[200px] leading-relaxed">
-                Tap to select a scan from your dataset folder
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#111111", marginBottom: 6 }}>Upload Chest X-Ray</h3>
+            <p style={{ fontSize: 13, color: "#777777", lineHeight: 1.5, marginBottom: 16, maxWidth: 220 }}>
+                Tap to choose a scan from your dataset folder
             </p>
 
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-                style={{ background: "#F5F5F0", border: "1px solid #E0E0D8" }}>
-                <FileWarning className="w-3 h-3 text-gray-400" />
-                <span className="text-[10px] text-gray-500 font-medium">PNG, JPG accepted</span>
+            <div style={{ display: "flex", gap: 8 }}>
+                {["PNG", "JPG"].map(fmt => (
+                    <span key={fmt} style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 99, background: "#F5F5EF", border: "1px solid #E5E5DC", color: "#666666" }}>
+                        {fmt}
+                    </span>
+                ))}
             </div>
         </motion.div>
     );
