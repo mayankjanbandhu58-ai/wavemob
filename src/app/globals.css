@@ -51,7 +51,7 @@ body {
 
 .card-sm {
   background: #FFFFFF;
-  border: 1px solid #EDEDЕ6;
+  border: 1px solid #EDEDE6;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -75,7 +75,7 @@ body {
 
 .card-elevated-sm {
   background: #FFFFFF;
-  border: 1px solid #EDEDЕ6;
+  border: 1px solid #EDEDE6;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -134,7 +134,7 @@ body {
 }
 
 .input-base::placeholder {
-  color: #ADADА0;
+  color: #ADADA0;
 }
 
 .input-base:focus {
