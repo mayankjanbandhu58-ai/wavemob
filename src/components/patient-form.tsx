@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { UserPlus, ActivitySquare } from "lucide-react";
+import { UserPlus, ActivitySquare, Sparkles } from "lucide-react";
 import type { PatientData } from "@/lib/dataset";
 
 interface PatientFormProps {
@@ -17,23 +17,23 @@ export function PatientForm({ data, onChange, disabled }: PatientFormProps) {
         onChange({ ...data, [e.target.name]: e.target.value });
     };
 
-    const inputCls =
-        "w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive/20 focus:border-olive transition-all outline-none text-sm disabled:opacity-50 disabled:cursor-not-allowed";
-
     return (
         <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl card-elevated overflow-hidden"
+            className="glass rounded-2xl overflow-hidden"
         >
             {/* Header */}
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl gradient-olive flex items-center justify-center shadow-md">
-                    <UserPlus className="w-4 h-4 text-white" />
+            <div className="px-5 py-4 border-b border-white/6 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg animate-pulse-glow">
+                    <UserPlus className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                    <h3 className="text-sm font-bold text-gray-900">Patient Registration</h3>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">Step 1 of 2 — Clinical Demographics</p>
+                    <h3 className="text-sm font-bold text-white">Patient Registration</h3>
+                    <p className="text-[10px] text-blue-400/60 uppercase tracking-wider">Step 1 of 2 — Clinical Demographics</p>
+                </div>
+                <div className="ml-auto">
+                    <Sparkles className="w-4 h-4 text-blue-400/30" />
                 </div>
             </div>
 
@@ -41,8 +41,8 @@ export function PatientForm({ data, onChange, disabled }: PatientFormProps) {
             <div className="p-5 space-y-4">
                 {/* Full Name */}
                 <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                        Full Name <span className="text-red-400">*</span>
+                    <label className="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">
+                        Full Name <span className="text-red-400 normal-case">*</span>
                     </label>
                     <input
                         type="text"
@@ -51,15 +51,15 @@ export function PatientForm({ data, onChange, disabled }: PatientFormProps) {
                         onChange={handle}
                         disabled={disabled}
                         placeholder="e.g., Rahul Sharma"
-                        className={inputCls}
+                        className="input-glass"
                     />
                 </div>
 
                 {/* Age + Gender row */}
                 <div className="grid grid-cols-2 gap-3">
                     <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                            Age <span className="text-red-400">*</span>
+                        <label className="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">
+                            Age <span className="text-red-400 normal-case">*</span>
                         </label>
                         <input
                             type="number"
@@ -70,19 +70,19 @@ export function PatientForm({ data, onChange, disabled }: PatientFormProps) {
                             placeholder="Years"
                             min="1"
                             max="120"
-                            className={inputCls}
+                            className="input-glass"
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                            Gender <span className="text-red-400">*</span>
+                        <label className="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">
+                            Gender <span className="text-red-400 normal-case">*</span>
                         </label>
                         <select
                             name="gender"
                             value={data.gender}
                             onChange={handle}
                             disabled={disabled}
-                            className={inputCls + " appearance-none"}
+                            className="input-glass"
                         >
                             <option value="" disabled>Select</option>
                             <option value="Male">Male</option>
@@ -94,8 +94,8 @@ export function PatientForm({ data, onChange, disabled }: PatientFormProps) {
 
                 {/* Phone */}
                 <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                        Phone Number <span className="text-gray-300">(optional)</span>
+                    <label className="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">
+                        Phone <span className="text-white/20 normal-case text-[10px]">(optional)</span>
                     </label>
                     <input
                         type="tel"
@@ -104,23 +104,25 @@ export function PatientForm({ data, onChange, disabled }: PatientFormProps) {
                         onChange={handle}
                         disabled={disabled}
                         placeholder="+91 98765 43210"
-                        className={inputCls}
+                        className="input-glass"
                     />
                 </div>
 
-                {/* Clinical context divider */}
-                <div className="pt-2 border-t border-gray-100">
-                    <div className="flex items-center gap-2 mb-3">
-                        <ActivitySquare className="w-3.5 h-3.5 text-olive" />
-                        <span className="text-[10px] font-bold text-olive uppercase tracking-wider">
-                            Clinical Context
-                        </span>
+                {/* Clinical Context divider */}
+                <div className="pt-1">
+                    <div className="flex items-center gap-2 mb-4">
+                        <div className="flex-1 h-px bg-white/6" />
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20">
+                            <ActivitySquare className="w-3 h-3 text-blue-400" />
+                            <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider">Clinical Context</span>
+                        </div>
+                        <div className="flex-1 h-px bg-white/6" />
                     </div>
 
                     {/* Symptoms */}
                     <div className="mb-3">
-                        <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                            Current Symptoms <span className="text-gray-300">(optional)</span>
+                        <label className="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">
+                            Symptoms <span className="text-white/20 normal-case text-[10px]">(optional)</span>
                         </label>
                         <input
                             type="text"
@@ -128,25 +130,27 @@ export function PatientForm({ data, onChange, disabled }: PatientFormProps) {
                             value={data.symptoms ?? ""}
                             onChange={handle}
                             disabled={disabled}
-                            placeholder="e.g., persistent cough, fever, shortness of breath"
-                            className={inputCls}
+                            placeholder="Cough, fever, shortness of breath..."
+                            className="input-glass"
                         />
                     </div>
 
-                    {/* Smoking history */}
+                    {/* Smoking */}
                     <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1.5">Smoking History</label>
+                        <label className="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">
+                            Smoking History
+                        </label>
                         <select
                             name="smoking_history"
                             value={data.smoking_history}
                             onChange={handle}
                             disabled={disabled}
-                            className={inputCls + " appearance-none"}
+                            className="input-glass"
                         >
                             <option value="Never">Never Smoked</option>
                             <option value="Former">Former Smoker</option>
-                            <option value="Current (Occasional)">Current (Occasional)</option>
-                            <option value="Current (Heavy)">Current (Heavy)</option>
+                            <option value="Current (Occasional)">Current — Occasional</option>
+                            <option value="Current (Heavy)">Current — Heavy</option>
                         </select>
                     </div>
                 </div>

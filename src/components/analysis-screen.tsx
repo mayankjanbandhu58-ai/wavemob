@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Cpu, Zap, BrainCircuit, FileSearch, FileCheck } from "lucide-react";
+import { BrainCircuit, Cpu, FileSearch, FileCheck, Zap } from "lucide-react";
 import { TERMINAL_LOGS } from "@/lib/dataset";
 
 interface AnalysisScreenProps {
@@ -14,13 +14,13 @@ interface AnalysisScreenProps {
 const ANALYSIS_DURATION = 3000;
 
 const STAGES = [
-    { label: "Preprocessing", icon: BrainCircuit, pct: 25 },
-    { label: "Ensemble Inference", icon: Cpu, pct: 60 },
-    { label: "Heatmap Generation", icon: FileSearch, pct: 85 },
-    { label: "Report Compilation", icon: FileCheck, pct: 100 },
+    { label: "Preprocessing", icon: BrainCircuit, color: "from-violet-500 to-purple-500" },
+    { label: "Ensemble Inference", icon: Cpu, color: "from-blue-500 to-cyan-400" },
+    { label: "Heatmap Generation", icon: FileSearch, color: "from-cyan-400 to-teal-400" },
+    { label: "Report Compilation", icon: FileCheck, color: "from-emerald-500 to-green-400" },
 ];
 
-export function AnalysisScreen({ imagePreview, fileName, onComplete }: AnalysisScreenProps) {
+export function AnalysisScreen({ imagePreview, onComplete }: AnalysisScreenProps) {
     const [progress, setProgress] = useState(0);
     const [visibleLogs, setVisibleLogs] = useState(0);
     const [stageIndex, setStageIndex] = useState(0);
@@ -31,82 +31,78 @@ export function AnalysisScreen({ imagePreview, fileName, onComplete }: AnalysisS
             const elapsed = Date.now() - startTime;
             const pct = Math.min((elapsed / ANALYSIS_DURATION) * 100, 100);
             setProgress(pct);
-
-            // Update stage
-            const stage = STAGES.findIndex(s => pct < s.pct);
-            setStageIndex(stage === -1 ? STAGES.length - 1 : stage);
-
-            if (elapsed >= ANALYSIS_DURATION) {
-                clearInterval(interval);
-                setTimeout(onComplete, 200);
-            }
+            setStageIndex(Math.min(Math.floor((pct / 100) * STAGES.length), STAGES.length - 1));
+            if (elapsed >= ANALYSIS_DURATION) { clearInterval(interval); setTimeout(onComplete, 200); }
         }, 30);
         return () => clearInterval(interval);
     }, [onComplete]);
 
     useEffect(() => {
         const perLog = ANALYSIS_DURATION / TERMINAL_LOGS.length;
-        const interval = setInterval(() => {
-            setVisibleLogs(prev => {
-                if (prev >= TERMINAL_LOGS.length) { clearInterval(interval); return prev; }
-                return prev + 1;
+        const t = setInterval(() => {
+            setVisibleLogs(p => {
+                if (p >= TERMINAL_LOGS.length) { clearInterval(t); return p; }
+                return p + 1;
             });
         }, perLog);
-        return () => clearInterval(interval);
+        return () => clearInterval(t);
     }, []);
 
-    const currentStage = STAGES[stageIndex] ?? STAGES[STAGES.length - 1];
-    const StageIcon = currentStage.icon;
+    const stage = STAGES[stageIndex];
+    const StageIcon = stage.icon;
 
     return (
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-white flex items-center justify-center overflow-y-auto"
+            className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto"
+            style={{
+                background: "linear-gradient(135deg, #070d1f 0%, #0a1628 50%, #0d1f3c 100%)",
+            }}
         >
-            <div className="w-full max-w-md mx-4 space-y-5 py-8">
-                {/* Stage header */}
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center"
-                >
-                    <div className="w-16 h-16 rounded-2xl gradient-olive mx-auto mb-4 flex items-center justify-center shadow-xl animate-pulse-glow">
+            {/* Background ambient blobs */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute top-0 left-1/4 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-cyan-600/8 rounded-full blur-3xl" />
+            </div>
+
+            <div className="relative w-full max-w-md mx-4 space-y-5 py-8">
+                {/* Header */}
+                <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
+                    <div className={`w-18 h-18 rounded-2xl bg-gradient-to-br ${stage.color} mx-auto mb-4 p-4 flex items-center justify-center shadow-xl animate-pulse-glow`}
+                        style={{ width: 72, height: 72 }}>
                         <StageIcon className="w-8 h-8 text-white" />
                     </div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-1">Analyzing X-Ray</h2>
-                    <motion.p
-                        key={currentStage.label}
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-sm text-olive font-semibold"
+                    <h2 className="text-xl font-bold text-white mb-1">Analyzing X-Ray</h2>
+                    <motion.p key={stage.label} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                        className="text-sm text-blue-400 font-semibold"
                     >
-                        Stage: {currentStage.label}
+                        {stage.label}
                     </motion.p>
-                    <p className="text-xs text-gray-400 mt-1">AI inference pipeline active</p>
+                    <p className="text-xs text-white/25 mt-1">AI inference pipeline active</p>
                 </motion.div>
 
                 {/* Stage pills */}
-                <div className="flex items-center justify-between px-2">
-                    {STAGES.map((s, i) => {
-                        const Icon = s.icon;
-                        const done = i < stageIndex;
-                        const active = i === stageIndex;
-                        return (
-                            <div key={s.label} className="flex flex-col items-center gap-1.5">
-                                <div className={`
-                  w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-500
-                  ${done ? "gradient-olive" : active ? "border-2 border-olive bg-olive/10" : "bg-gray-100"}
-                `}>
-                                    <Icon className={`w-4 h-4 ${done ? "text-white" : active ? "text-olive" : "text-gray-300"}`} />
+                <div className="glass rounded-2xl p-4">
+                    <div className="flex items-center gap-2">
+                        {STAGES.map((s, i) => {
+                            const Icon = s.icon;
+                            const done = i < stageIndex;
+                            const active = i === stageIndex;
+                            return (
+                                <div key={s.label} className="flex-1 flex flex-col items-center gap-1.5">
+                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-500 ${done ? `bg-gradient-to-br ${s.color} shadow-lg` :
+                                            active ? "bg-white/10 border border-blue-400/40" : "bg-white/5"
+                                        }`}>
+                                        <Icon className={`w-3.5 h-3.5 ${done || active ? "text-white" : "text-white/20"}`} />
+                                    </div>
+                                    <span className={`text-[8px] font-bold text-center leading-tight ${active ? "text-blue-300" : done ? "text-white/40" : "text-white/15"
+                                        }`}>{s.label}</span>
                                 </div>
-                                <span className={`text-[9px] font-bold text-center max-w-[50px] leading-tight ${active ? "text-olive" : done ? "text-gray-500" : "text-gray-300"}`}>
-                                    {s.label}
-                                </span>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </div>
 
                 {/* X-ray scanning image */}
@@ -114,71 +110,72 @@ export function AnalysisScreen({ imagePreview, fileName, onComplete }: AnalysisS
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="relative rounded-2xl overflow-hidden card-elevated mx-auto max-w-[180px]"
+                    className="relative glass rounded-2xl overflow-hidden mx-auto"
+                    style={{ maxWidth: 200 }}
                 >
-                    <div className="aspect-square relative bg-gray-50">
+                    <div className="aspect-square relative">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={imagePreview} alt="Analyzing" className="w-full h-full object-cover opacity-70" />
-                        <div className="absolute inset-0 overflow-hidden">
-                            <div
-                                className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-olive to-transparent animate-scan-line"
-                                style={{ filter: "blur(1px)" }}
-                            />
-                        </div>
-                        <div className="absolute inset-3 border border-olive/30 rounded-lg pointer-events-none" />
-                        {/* corner markers */}
-                        {[["top-2 left-2", "rounded-br-none rounded-bl-none rounded-tr-none"],
-                        ["top-2 right-2", "rounded-bl-none rounded-br-none rounded-tl-none"],
-                        ["bottom-2 left-2", "rounded-tr-none rounded-tl-none rounded-br-none"],
-                        ["bottom-2 right-2", "rounded-tl-none rounded-tr-none rounded-bl-none"],
-                        ].map(([pos], ci) => (
-                            <div key={ci} className={`absolute ${pos} w-3 h-3 border-2 border-olive/60 rounded`} />
+                        <img src={imagePreview} alt="Analyzing" className="w-full h-full object-cover opacity-60" />
+
+                        {/* Scan gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/20 to-transparent mix-blend-overlay" />
+
+                        {/* Scan line */}
+                        <div className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-scan-line"
+                            style={{ filter: "blur(1px)" }} />
+
+                        {/* Corner brackets */}
+                        {[
+                            "top-2 left-2 border-t-2 border-l-2",
+                            "top-2 right-2 border-t-2 border-r-2",
+                            "bottom-2 left-2 border-b-2 border-l-2",
+                            "bottom-2 right-2 border-b-2 border-r-2",
+                        ].map((cls, i) => (
+                            <div key={i} className={`absolute ${cls} w-4 h-4 border-blue-400/80 rounded-sm`} />
                         ))}
+
+                        {/* Center cross-hair */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-6 h-6 border border-blue-400/30 rounded-full" />
+                            <div className="absolute w-10 h-px bg-blue-400/20" />
+                            <div className="absolute w-px h-10 bg-blue-400/20" />
+                        </div>
                     </div>
                 </motion.div>
 
                 {/* Progress bar */}
-                <div className="space-y-1.5 px-1">
+                <div className="space-y-2 px-1">
                     <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1.5">
-                            <Zap className="w-3.5 h-3.5 text-olive" />
-                            <span className="text-gray-600 font-medium">Neural Pipeline</span>
+                            <Zap className="w-3.5 h-3.5 text-blue-400" />
+                            <span className="text-white/40 font-medium">Neural Pipeline</span>
                         </div>
-                        <span className="text-olive font-black font-mono">{Math.round(progress)}%</span>
+                        <span className="text-blue-300 font-black font-mono">{Math.round(progress)}%</span>
                     </div>
-                    <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden border border-gray-200">
-                        <motion.div
-                            className="h-full rounded-full"
-                            style={{ width: `${progress}%`, background: "linear-gradient(90deg, #636B2F, #8a9440)" }}
-                            transition={{ duration: 0.1 }}
-                        />
+                    <div className="progress-track">
+                        <div className="progress-fill" style={{ width: `${progress}%` }} />
                     </div>
                 </div>
 
                 {/* Terminal logs */}
-                <div className="rounded-xl card-elevated overflow-hidden">
-                    <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 bg-gray-50">
+                <div className="glass rounded-2xl overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/5 bg-white/2">
                         <div className="flex gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                            <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/70" />
                         </div>
-                        <span className="text-[10px] text-gray-400 font-mono ml-1.5">wavelength-inference.log</span>
+                        <span className="text-[10px] text-white/20 font-mono ml-1.5">wavelength-inference.log</span>
                     </div>
-                    <div className="p-3 h-[180px] overflow-y-auto font-mono text-[11px] space-y-1 bg-white">
+                    <div className="p-3 h-[180px] overflow-y-auto font-mono text-[11px] space-y-1 bg-transparent">
                         {TERMINAL_LOGS.slice(0, visibleLogs).map((log, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="flex gap-2"
-                            >
-                                <span className="text-olive shrink-0">[{log.time}]</span>
-                                <span className={i === visibleLogs - 1 ? "text-gray-800" : "text-gray-400"}>{log.text}</span>
+                            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex gap-2">
+                                <span className="text-blue-400/60 shrink-0">[{log.time}]</span>
+                                <span className={i === visibleLogs - 1 ? "text-white/80" : "text-white/30"}>{log.text}</span>
                             </motion.div>
                         ))}
                         {visibleLogs < TERMINAL_LOGS.length && (
-                            <span className="text-olive animate-terminal-blink">▋</span>
+                            <span className="text-blue-400 animate-terminal-blink">▋</span>
                         )}
                     </div>
                 </div>
