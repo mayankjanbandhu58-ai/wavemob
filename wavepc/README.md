@@ -96,9 +96,18 @@ python training/export_models.py
 ```
 
 ### Run Backend
-```bash
-uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+
+From the **root directory** (`wavelength`):
+```powershell
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+backend
 ```
+
+OR from the **backend directory** (`wavelength/backend`):
+```powershell
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
 
 ### Run Frontend
 ```bash

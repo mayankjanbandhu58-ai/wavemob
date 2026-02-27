@@ -10,6 +10,11 @@ interface DiseaseTableProps {
     probabilities: DiseaseMap;
     uncertainty: UncertaintyData;
     justifications?: Record<string, Justification>;
+    differentialDiagnoses?: Array<{
+        disease: string;
+        probability: number;
+        icd10: string;
+    }>;
 }
 
 const DISEASE_INFO: Record<string, { shortName: string; icon: string }> = {
@@ -41,6 +46,7 @@ export function DiseaseTable({
     probabilities,
     uncertainty,
     justifications,
+    differentialDiagnoses,
 }: DiseaseTableProps) {
     const diseases = Object.entries(probabilities).sort(([, a], [, b]) => b - a);
     const [selectedDisease, setSelectedDisease] = useState<string | null>(null);
@@ -125,6 +131,51 @@ export function DiseaseTable({
                     })}
                 </div>
             </div>
+
+            {/* Differential Diagnosis Section */}
+            {differentialDiagnoses && differentialDiagnoses.length > 0 && (
+                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-sm hover:shadow-md transition-shadow mt-6">
+                    <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center border border-indigo-100 shadow-sm">
+                            <Activity className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-[#1a1c29]">
+                                Differential Diagnosis
+                            </h3>
+                            <p className="text-xs text-slate-500 font-medium">Top Ranked Conditions & ICD-10 Mapping</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        {differentialDiagnoses.map((diff, index) => (
+                            <div key={diff.disease} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50">
+                                <div>
+                                    <div className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                        <span className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] text-slate-600">
+                                            {index + 1}
+                                        </span>
+                                        {diff.disease}
+                                    </div>
+                                    <div className="text-xs text-slate-500 mt-1 ml-7">
+                                        Clinical correlation recommended.
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-sm font-black text-indigo-600">
+                                        {(diff.probability * 100).toFixed(1)}%
+                                    </div>
+                                    {diff.icd10 && (
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                            ICD-10: {diff.icd10}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <JustificationModal
                 isOpen={!!selectedDisease}

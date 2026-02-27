@@ -78,10 +78,21 @@ class RiskEngine:
         # Identify dominant findings
         dominant_findings = self._get_dominant_findings(probabilities)
 
+        # Step 5: Calculate Radiographic Severity Index (RSI)
+        rsi_score = min(100.0, float(risk_score * 100))
+        if rsi_score < 40:
+            severity_grade = "Mild"
+        elif rsi_score < 75:
+            severity_grade = "Moderate"
+        else:
+            severity_grade = "Severe"
+
         return {
             "risk_score": round(float(risk_score), 4),
             "risk_level": risk_level,
             "risk_color": risk_color,
+            "severity_index": round(rsi_score, 1),
+            "severity_grade": severity_grade,
             "dominant_findings": dominant_findings,
             "recommendation": self._get_recommendation(risk_level),
         }

@@ -111,7 +111,8 @@ async def lifespan(app: FastAPI):
     app_state.risk_engine = RiskEngine()
 
     # Initialize report storage
-    app_state.reports = {}
+    from app.utils.storage import load_all_reports
+    load_all_reports()
 
     logger.info("Wavelength API ready for requests")
     
@@ -152,10 +153,20 @@ app.add_middleware(
 from app.routes.predict import router as predict_router
 from app.routes.report import router as report_router
 from app.routes.analytics import router as analytics_router
+from app.routes.export import router as export_router
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    print("VALIDATION ERROR:", exc.errors())
+    print("BODY:", exc.body)
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
 app.include_router(predict_router, prefix="/api", tags=["Prediction"])
 app.include_router(report_router, prefix="/api", tags=["Reports"])
 app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
+app.include_router(export_router, prefix="/api/v1/export", tags=["Export"])
 
 
 @app.get("/")

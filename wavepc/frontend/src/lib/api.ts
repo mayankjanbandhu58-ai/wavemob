@@ -21,6 +21,8 @@ export async function predictImage(file: File, patientDetails?: PatientDetails):
         if (patientDetails.gender) formData.append("patient_gender", patientDetails.gender);
         if (patientDetails.phone) formData.append("patient_phone", patientDetails.phone);
         if (patientDetails.address) formData.append("patient_address", patientDetails.address);
+        if (patientDetails.symptoms) formData.append("symptoms", patientDetails.symptoms);
+        if (patientDetails.smoking_history) formData.append("smoking_history", patientDetails.smoking_history);
     }
 
     const response = await fetch(`${API_BASE}/predict`, {
@@ -116,23 +118,6 @@ export async function getDemographics(ageGroup: string = "all", gender: string =
     return response.json();
 }
 
-/**
- * Fetch ML-synthesized demographic risk alert from NIH dataset via Ollama.
- */
-export async function getDemographicRiskAlert(age: string, gender: string): Promise<{ alert: string }> {
-    const params = new URLSearchParams();
-    if (age) params.append("age", age);
-    if (gender) params.append("gender", gender);
-
-    const qs = params.toString();
-    const url = `${API_BASE}/analytics/demographic-risk${qs ? "?" + qs : ""}`;
-
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error("Failed to fetch demographic risk alert");
-    }
-    return response.json();
-}
 
 /**
  * Fetch Socratic tutor feedback from Mistral 7B.
@@ -153,15 +138,31 @@ export async function getTutorFeedback(guess: string, trueLabel: string, desc: s
 /**
  * Send a message to the Global AI Assistant.
  */
-export async function sendChatMessage(message: string, history: { role: string, content: string }[] = []): Promise<{ reply: string }> {
+export async function sendChatMessage(message: string, history: { role: string, content: string }[] = [], image?: string): Promise<{ reply: string }> {
     const response = await fetch(`${API_BASE}/analytics/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history }),
+        body: JSON.stringify({ message, history, ...(image ? { image } : {}) }),
     });
 
     if (!response.ok) {
         throw new Error("Chat sequence failed");
+    }
+    return response.json();
+}
+
+/**
+ * Generate a SOAP note from a chat history.
+ */
+export async function generateSoapNote(history: { role: string, content: string }[]): Promise<{ soap: string }> {
+    const response = await fetch(`${API_BASE}/analytics/soap`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ history }),
+    });
+
+    if (!response.ok) {
+        throw new Error("SOAP generation failed");
     }
     return response.json();
 }
@@ -177,9 +178,50 @@ export async function getDiseaseProgression(disease: string): Promise<{ stages: 
 }
 
 /**
+ * Fetch clinical guidelines for a specific pathology.
+ */
+export async function getClinicalGuidelines(disease: string): Promise<{ guideline: string }> {
+    const params = new URLSearchParams({ disease });
+    const response = await fetch(`${API_BASE}/analytics/guidelines?${params.toString()}`);
+    if (!response.ok) throw new Error("Failed to fetch guidelines");
+    return response.json();
+}
+
+/**
  * Check API health.
  */
 export async function checkHealth(): Promise<{ status: string; models_ready: boolean }> {
     const response = await fetch(`${API_BASE.replace("/api", "")}/health`);
+    return response.json();
+}
+/**
+ * Submit a radiologist correction for a report (Active Learning).
+ */
+export async function correctReport(reportId: string, correctedDisease: string, notes: string): Promise<{ success: boolean, message: string }> {
+    const response = await fetch(`${API_BASE}/report/${reportId}/correction`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ corrected_disease: correctedDisease, notes, radiologist_id: "Dr. Krtika Soni" }),
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to submit correction");
+    }
+    return response.json();
+}
+
+/**
+ * Verify or override an AI report (HITL)
+ */
+export async function verifyReport(reportId: string, status: "approved" | "overridden", notes: string): Promise<{ message: string, status: string }> {
+    const response = await fetch(`${API_BASE}/report/${reportId}/verify`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, notes }),
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to verify report");
+    }
     return response.json();
 }

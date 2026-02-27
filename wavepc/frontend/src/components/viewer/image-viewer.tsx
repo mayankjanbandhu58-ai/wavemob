@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, Scan, Flame, Info } from "lucide-react";
+import { Typewriter } from "@/components/ui/typewriter";
 
 interface ImageViewerProps {
     preview: string | null;
@@ -133,15 +134,22 @@ export function ImageViewer({
                                         </div>
                                         <div>
                                             <h4 className="text-white font-bold text-sm mb-1">{topDisease} Highlight Region</h4>
-                                            <p className="text-slate-300 text-xs leading-relaxed mb-3">
-                                                {diseaseInsights[topDisease]?.description || "The highlighted region indicates active consideration by the Grad-CAM tensor network."}
-                                            </p>
+                                            <div className="text-slate-300 text-xs leading-relaxed mb-3 h-[60px]">
+                                                <Typewriter
+                                                    text={diseaseInsights[topDisease]?.description || "The highlighted region indicates active consideration by the Grad-CAM tensor network."}
+                                                    speed={20}
+                                                />
+                                            </div>
 
                                             <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
                                                 <h5 className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Common Clinical Symptoms</h5>
-                                                <p className="text-slate-200 text-xs italic">
-                                                    {diseaseInsights[topDisease]?.symptoms || "Symptoms vary by patient."}
-                                                </p>
+                                                <div className="text-slate-200 text-xs italic">
+                                                    <Typewriter
+                                                        text={diseaseInsights[topDisease]?.symptoms || "Symptoms vary by patient."}
+                                                        delay={1000}
+                                                        speed={20}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

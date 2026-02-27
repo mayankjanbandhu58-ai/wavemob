@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, FileArchive, BookOpen, Layers, LogOut, Waves, Menu, X, Settings, UserPlus, BarChart3, Link, MessageSquare, Search, ActivitySquare, ListTodo } from "lucide-react";
+import { Upload, FileArchive, BookOpen, Layers, LogOut, Waves, Menu, X, Settings, UserPlus, BarChart3, Link, MessageSquare, ActivitySquare, ListTodo } from "lucide-react";
 
-export type ViewType = "new-scan" | "upload" | "worklist" | "upload-history" | "reports" | "ai-summary" | "ai-chat" | "learn" | "training" | "analytics" | "scoring" | "ehr-sync" | "patient-search" | "settings";
+export type ViewType = "new-scan" | "upload" | "worklist" | "upload-history" | "reports" | "ai-summary" | "ai-chat" | "learn" | "training" | "analytics" | "scoring" | "ehr-sync" | "settings" | "developer-mode";
 
 interface SidebarProps {
     currentView: ViewType;
@@ -18,7 +18,6 @@ export function Sidebar({ currentView, onChangeView }: SidebarProps) {
         { id: "upload", label: "Analysis & Upload", icon: Upload },
         { id: "reports", label: "Patient Reports", icon: FileArchive },
         { id: "upload-history", label: "Analysis History", icon: Layers },
-        { id: "patient-search", label: "Global Search", icon: Search },
         { id: "ai-summary", label: "AI Summary", icon: Layers },
         { id: "ai-chat", label: "AI Assistant", icon: MessageSquare },
         { id: "learn", label: "Knowledge Hub", icon: BookOpen },
@@ -28,6 +27,7 @@ export function Sidebar({ currentView, onChangeView }: SidebarProps) {
         { id: "ehr-sync", label: "EHR Sync", icon: Link },
         { id: "worklist", label: "Triage Worklist", icon: ListTodo },
         { id: "settings", label: "Settings", icon: Settings },
+        { id: "developer-mode", label: "Developer Mode", icon: ActivitySquare },
     ];
 
     return (
@@ -103,7 +103,7 @@ export function Sidebar({ currentView, onChangeView }: SidebarProps) {
                             DR
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold truncate text-slate-700">Dr. Sarah Jenkins</p>
+                            <p className="text-sm font-semibold truncate text-slate-700">Dr. Krtika Soni</p>
                             <p className="text-xs text-slate-500 truncate">Radiology Dept.</p>
                         </div>
                         <LogOut className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-pointer" />

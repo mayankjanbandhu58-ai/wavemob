@@ -8,6 +8,8 @@ export interface PatientDetails {
   gender?: string;
   phone?: string;
   address?: string;
+  symptoms?: string;
+  smoking_history?: string;
 }
 
 export interface Justification {
@@ -37,6 +39,8 @@ export interface RiskAssessment {
   risk_score: number;
   risk_level: "Low Risk" | "Moderate Risk" | "High Suspicion";
   risk_color: string;
+  severity_index: number;
+  severity_grade: "Mild" | "Moderate" | "Severe";
   dominant_findings: Array<{
     disease: string;
     probability: number;
@@ -61,13 +65,22 @@ export interface Report {
   model_version: string;
   calibrated: boolean;
   disease_probabilities: DiseaseMap;
+  differential_diagnoses?: Array<{
+    disease: string;
+    probability: number;
+    icd10: string;
+  }>;
   justifications?: Record<string, Justification>;
   risk_assessment: RiskAssessment;
   uncertainty: UncertaintyData;
   disclaimer: string;
+  verification_status?: "pending_review" | "approved" | "overridden";
+  reviewer_notes?: string;
   ai_summary?: string;
   ai_second_opinion?: string;
   patient_details?: PatientDetails;
+  inference_time_ms?: number;
+  ai_patient_summary?: string;
   images?: {
     original: string | null;
     segmentation_overlay: string | null;
@@ -88,11 +101,17 @@ export interface PredictionResponse {
   inference_time_ms: number;
   report_id: string;
   disease_probabilities: DiseaseMap;
+  differential_diagnoses?: Array<{
+    disease: string;
+    probability: number;
+    icd10: string;
+  }>;
   justifications?: Record<string, Justification>;
   risk_assessment: RiskAssessment;
   uncertainty: UncertaintyData;
   calibrated: boolean;
   ai_summary?: string;
+  ai_patient_summary?: string;
   ai_second_opinion?: string;
   images: {
     original: string | null;

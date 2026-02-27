@@ -8,7 +8,7 @@ import { RiskBadge } from "@/components/results/risk-badge";
 import { UncertaintyIndicator } from "@/components/results/uncertainty-indicator";
 import { DiseaseTimeline } from "@/components/results/disease-timeline";
 import { ReportDownload } from "@/components/report/report-download";
-import { predictImage, getDemographicRiskAlert } from "@/lib/api";
+import { predictImage } from "@/lib/api";
 import type { PredictionResponse, PatientDetails, ScanRecord } from "@/types";
 import { ResultModal } from "@/components/results/result-modal";
 import ReactMarkdown from "react-markdown";
@@ -25,7 +25,9 @@ export function NewScan({ onAiSummaryClick, externalHistory, onHistoryUpdate }: 
         age: "",
         gender: "",
         phone: "",
-        address: ""
+        address: "",
+        symptoms: "",
+        smoking_history: "Never"
     });
 
     const [file, setFile] = useState<File | null>(null);
@@ -33,35 +35,11 @@ export function NewScan({ onAiSummaryClick, externalHistory, onHistoryUpdate }: 
     const [result, setResult] = useState<PredictionResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [demoAlert, setDemoAlert] = useState<string | null>(null);
-    const [loadingDemoAlert, setLoadingDemoAlert] = useState(false);
 
     // Modal State (History is now external)
     const [selectedScan, setSelectedScan] = useState<ScanRecord | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    useEffect(() => {
-        if (patientData.age && patientData.gender && parseInt(patientData.age) > 0) {
-            setLoadingDemoAlert(true);
-            const debounceTimer = setTimeout(async () => {
-                try {
-                    const res = await getDemographicRiskAlert(patientData.age || "", patientData.gender || "");
-                    if (res?.alert && !res.alert.includes("sufficient demographic data")) {
-                        setDemoAlert(res.alert);
-                    } else {
-                        setDemoAlert(null);
-                    }
-                } catch {
-                    setDemoAlert(null);
-                } finally {
-                    setLoadingDemoAlert(false);
-                }
-            }, 1000); // 1s debounce
-            return () => clearTimeout(debounceTimer);
-        } else {
-            setDemoAlert(null);
-        }
-    }, [patientData.age, patientData.gender]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -116,7 +94,9 @@ export function NewScan({ onAiSummaryClick, externalHistory, onHistoryUpdate }: 
             age: "",
             gender: "",
             phone: "",
-            address: ""
+            address: "",
+            symptoms: "",
+            smoking_history: "Never"
         });
     }, []);
 
@@ -137,32 +117,6 @@ export function NewScan({ onAiSummaryClick, externalHistory, onHistoryUpdate }: 
             {/* ═══ LEFT PANEL (7 columns) ═══ */}
             <div className="lg:col-span-7 space-y-6">
 
-                {/* AI Demographic Alert */}
-                <AnimatePresence>
-                    {(demoAlert || loadingDemoAlert) && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, height: "auto", scale: 1 }}
-                            exit={{ opacity: 0, height: 0, scale: 0.95 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 shadow-sm flex items-start gap-4">
-                                <div className="mt-0.5">
-                                    <AlertTriangle className={`w-5 h-5 ${loadingDemoAlert ? 'text-slate-400 animate-pulse' : 'text-amber-500'}`} />
-                                </div>
-                                <div className="flex-1">
-                                    <h4 className="text-sm font-bold text-amber-900 mb-1 flex items-center gap-2">
-                                        ⚠️ AI Demographic Risk Alert
-                                        <span className="bg-amber-100/80 text-amber-700 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Local Dataset Analysis</span>
-                                    </h4>
-                                    <p className={`text-sm font-medium leading-relaxed ${loadingDemoAlert ? 'text-amber-700/50' : 'text-amber-800'}`}>
-                                        {loadingDemoAlert ? 'Synthesizing NIH dataset risk patterns...' : demoAlert}
-                                    </p>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
 
                 {/* Registration Form */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm relative overflow-hidden">
@@ -188,7 +142,6 @@ export function NewScan({ onAiSummaryClick, externalHistory, onHistoryUpdate }: 
                                 onChange={handleInputChange}
                                 disabled={loading || !!result}
                                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
-                                placeholder="e.g. Jane Doe"
                             />
                         </div>
 
@@ -231,7 +184,6 @@ export function NewScan({ onAiSummaryClick, externalHistory, onHistoryUpdate }: 
                                 onChange={handleInputChange}
                                 disabled={loading || !!result}
                                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
-                                placeholder="+1 (555) 000-0000"
                             />
                         </div>
 
@@ -246,6 +198,45 @@ export function NewScan({ onAiSummaryClick, externalHistory, onHistoryUpdate }: 
                                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none resize-none"
                                 placeholder="Enter address..."
                             />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-5 mt-4 pt-4 border-t border-slate-100">
+                            <div className="col-span-2">
+                                <label className="block text-sm font-bold text-indigo-700 mb-1.5 flex items-center gap-2">
+                                    <ActivitySquare className="w-4 h-4" />
+                                    Clinical Context
+                                </label>
+                                <p className="text-xs text-slate-500 mb-3">Adding context helps the AI act as a holistic second reader.</p>
+                            </div>
+
+                            <div className="col-span-2">
+                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Current Symptoms (Optional)</label>
+                                <input
+                                    type="text"
+                                    name="symptoms"
+                                    value={patientData.symptoms}
+                                    onChange={handleInputChange}
+                                    disabled={loading || !!result}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                                    placeholder="e.g., Persistent cough, fever, shortness of breath..."
+                                />
+                            </div>
+
+                            <div className="col-span-2">
+                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Smoking History</label>
+                                <select
+                                    name="smoking_history"
+                                    value={patientData.smoking_history}
+                                    onChange={handleInputChange}
+                                    disabled={loading || !!result}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none appearance-none"
+                                >
+                                    <option value="Never">Never Smoked</option>
+                                    <option value="Former">Former Smoker</option>
+                                    <option value="Current (Occasional)">Current (Occasional)</option>
+                                    <option value="Current (Heavy)">Current (Heavy)</option>
+                                </select>
+                            </div>
                         </div>
                     </form>
                 </div>

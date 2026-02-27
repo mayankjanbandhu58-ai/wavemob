@@ -101,9 +101,14 @@ export function RiskBadge({
                         <h3 className={`text-2xl font-black ${styles.textColor}`}>
                             {riskAssessment.risk_level}
                         </h3>
-                        <p className="text-xs text-slate-600 font-semibold mt-0.5 flex items-center gap-1">
-                            <span>Score:</span>
-                            <span className="tabular-nums bg-slate-100 px-1.5 rounded text-slate-700 border border-slate-200">{(riskAssessment.risk_score * 100).toFixed(1)}%</span>
+                        <p className="text-[11px] text-slate-600 font-semibold mt-1 flex flex-wrap items-center gap-1">
+                            <span>Neural Score:</span>
+                            <span className="tabular-nums bg-slate-100 px-1.5 rounded text-slate-700 border border-slate-200 mr-2">{(riskAssessment.risk_score * 100).toFixed(1)}%</span>
+                            <span>RSI Severity:</span>
+                            <span className={`tabular-nums px-1.5 rounded border font-bold ${riskAssessment.severity_grade === 'Severe' ? 'bg-red-50 text-red-700 border-red-200' :
+                                    riskAssessment.severity_grade === 'Moderate' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                        'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                }`}>{riskAssessment.severity_index}/100 ({riskAssessment.severity_grade})</span>
                         </p>
                     </div>
                 </div>

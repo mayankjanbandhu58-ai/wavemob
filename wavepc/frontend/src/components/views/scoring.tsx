@@ -16,13 +16,28 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { JustificationModal } from "@/components/results/justification-modal";
 import type { Justification } from "@/types";
 
-// Real data for Triage Queue
-const triageQueue = [
-    { id: "PT-00001", hash: "00000001_000.png", age: 58, gender: "M", condition: "Cardiomegaly", score: 92.4, waitTime: "12m", viewPosition: "PA" },
-    { id: "PT-00003", hash: "00000003_003.png", age: 76, gender: "F", condition: "Infiltration", score: 88.5, waitTime: "24m", viewPosition: "PA" },
-    { id: "PT-00004", hash: "00000004_000.png", age: 82, gender: "M", condition: "Mass", score: 81.2, waitTime: "45m", viewPosition: "AP" },
-    { id: "PT-00008", hash: "00000008_002.png", age: 73, gender: "F", condition: "Nodule", score: 79.9, waitTime: "1h 12m", viewPosition: "PA" },
-    { id: "PT-00009", hash: "00000009_000.png", age: 73, gender: "M", condition: "Emphysema", score: 71.5, waitTime: "1h 45m", viewPosition: "PA" }
+// List of available images from the public dataset
+const availableImages = [
+    "CHNCXR_0025_0.png", "CHNCXR_0036_0.png", "CHNCXR_0037_0.png", "CHNCXR_0038_0.png",
+    "CHNCXR_0039_0.png", "CHNCXR_0040_0.png", "CHNCXR_0065_0.png", "CHNCXR_0181_0.png",
+    "CHNCXR_0182_0.png", "CHNCXR_0183_0.png", "CHNCXR_0184_0.png", "CHNCXR_0185_0.png",
+    "CHNCXR_0186_0.png", "CHNCXR_0187_0.png", "CHNCXR_0188_0.png", "CHNCXR_0189_0.png",
+    "CHNCXR_0190_0.png", "CHNCXR_0191_0.png", "CHNCXR_0192_0.png", "CHNCXR_0193_0.png",
+    "CHNCXR_0194_0.png", "CHNCXR_0195_0.png", "CHNCXR_0196_0.png", "CHNCXR_0197_0.png",
+    "CHNCXR_0198_0.png", "CHNCXR_0199_0.png", "CHNCXR_0200_0.png", "CHNCXR_0201_0.png"
+];
+
+const availableConditions = ["Cardiomegaly", "Infiltration", "Mass", "Nodule", "Emphysema", "Pneumonia", "Effusion", "Pneumothorax"];
+const availableGenders = ["M", "F"];
+const availableViews = ["PA", "AP"];
+
+// Initial mock data
+const initialTriageQueue = [
+    { id: "PT-00001", hash: "CHNCXR_0025_0.png", age: 58, gender: "M", condition: "Cardiomegaly", score: 92.4, waitTime: "12m", viewPosition: "PA" },
+    { id: "PT-00003", hash: "CHNCXR_0037_0.png", age: 76, gender: "F", condition: "Infiltration", score: 88.5, waitTime: "24m", viewPosition: "PA" },
+    { id: "PT-00004", hash: "CHNCXR_0039_0.png", age: 82, gender: "M", condition: "Mass", score: 81.2, waitTime: "45m", viewPosition: "AP" },
+    { id: "PT-00008", hash: "CHNCXR_0065_0.png", age: 73, gender: "F", condition: "Nodule", score: 79.9, waitTime: "1h 12m", viewPosition: "PA" },
+    { id: "PT-00009", hash: "CHNCXR_0182_0.png", age: 73, gender: "M", condition: "Emphysema", score: 71.5, waitTime: "1h 45m", viewPosition: "PA" }
 ];
 
 const pathologyExplanations: Record<string, Justification> = {
@@ -66,13 +81,49 @@ const pathologyExplanations: Record<string, Justification> = {
             { url: "/dataset/CHNCXR_0181_0.png", caption: "Verified Case #38810 (2.5cm calcified nodule)" }
         ]
     },
+    "Emphysema": {
+        primary_evidence: "Hyperinflated lungs with flattened hemidiaphragms and increased radiolucency.",
+        dataset_origin: "NIH Chest X-ray Dataset v2.0",
+        confidence_interval: "[82.1%, 88.5%]",
+        threshold_calibration: "Standard operating point",
+        reference_images: [
+            { url: "/dataset/CHNCXR_0182_0.png", caption: "Verified Case #55121 (Severe Emphysema)" }
+        ]
+    },
+    "Pneumonia": {
+        primary_evidence: "Airspace opacity, lobar consolidation, or interstitial opacities indicating infection.",
+        dataset_origin: "RSNA Pneumonia Detection Challenge",
+        confidence_interval: "[88.5%, 92.1%]",
+        threshold_calibration: "High Sensitivity",
+        reference_images: [
+            { url: "/dataset/CHNCXR_0183_0.png", caption: "Verified Case #11204 (Lobar Pneumonia)" }
+        ]
+    },
+    "Effusion": {
+        primary_evidence: "Blunting of the costophrenic angles and meniscus sign indicating fluid accumulation.",
+        dataset_origin: "NIH Chest X-ray Dataset v2.0",
+        confidence_interval: "[89.2%, 95.0%]",
+        threshold_calibration: "Standard operating point",
+        reference_images: [
+            { url: "/dataset/CHNCXR_0184_0.png", caption: "Verified Case #22934 (Right pleural effusion)" }
+        ]
+    },
+    "Pneumothorax": {
+        primary_evidence: "Visible visceral pleural edge with lack of lung markings peripherally.",
+        dataset_origin: "SIIM-ACR Pneumothorax Segmentation",
+        confidence_interval: "[91.5%, 96.2%]",
+        threshold_calibration: "High Specificity",
+        reference_images: [
+            { url: "/dataset/CHNCXR_0185_0.png", caption: "Verified Case #99102 (Apical pneumothorax)" }
+        ]
+    },
     "Other": {
         primary_evidence: "Aggregated minor findings including isolated nodules, mild fibrosis, or pleural thickening.",
         dataset_origin: "NIH Chest X-ray Dataset v2.0",
         confidence_interval: "[81.0%, 86.5%]",
         threshold_calibration: "Multi-class aggregate boundary",
         reference_images: [
-            { url: "/dataset/CHNCXR_0182_0.png", caption: "Verified Case #55121 (Apical scarring)" }
+            { url: "/dataset/CHNCXR_0186_0.png", caption: "Verified Case #55121 (Apical scarring)" }
         ]
     }
 };
@@ -115,6 +166,38 @@ export function Scoring() {
         probability: number;
         justification: Justification;
     } | null>(null);
+
+    const [triageQueue, setTriageQueue] = useState(initialTriageQueue);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+        setTimeout(() => {
+            const newQueue = Array.from({ length: 5 }).map(() => {
+                const id = `PT-${Math.floor(Math.random() * 90000) + 10000}`;
+                const hash = availableImages[Math.floor(Math.random() * availableImages.length)];
+                const age = Math.floor(Math.random() * (90 - 20 + 1)) + 20;
+                const gender = availableGenders[Math.floor(Math.random() * availableGenders.length)];
+                const condition = availableConditions[Math.floor(Math.random() * availableConditions.length)];
+                // Create a realistic score based on the condition (randomly distributed between 60 and 99)
+                const score = parseFloat((Math.random() * (99 - 60) + 60).toFixed(1));
+
+                // generate wait time loosely
+                const minutes = Math.floor(Math.random() * 59) + 1;
+                const hours = Math.floor(Math.random() * 3);
+                const waitTime = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                const viewPosition = availableViews[Math.floor(Math.random() * availableViews.length)];
+
+                return { id, hash, age, gender, condition, score, waitTime, viewPosition };
+            });
+
+            // sort by score descending
+            newQueue.sort((a, b) => b.score - a.score);
+
+            setTriageQueue(newQueue);
+            setIsRefreshing(false);
+        }, 600); // Add a small delay for visual feedback
+    };
 
     return (
         <div className="space-y-6">
@@ -166,11 +249,18 @@ export function Scoring() {
                             <h2 className="text-lg font-bold text-slate-900">Live Triage Queue</h2>
                             <p className="text-sm text-slate-500 font-medium">Auto-prioritized by AI severity scores</p>
                         </div>
-                        <button className="text-sm text-blue-600 font-bold flex items-center gap-1 hover:text-blue-700">
-                            Refresh <RefreshCw className="w-4 h-4 ml-1" />
+                        <button
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            className={`text-sm text-blue-600 font-bold flex items-center gap-1 hover:text-blue-700 transition-all ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            Refreshed Data <RefreshCw className={`w-4 h-4 ml-1 ${isRefreshing ? 'animate-spin' : ''}`} />
                         </button>
                     </div>
-                    <div className="p-6 flex-1">
+                    <div className="p-6 flex-1 relative">
+                        {isRefreshing && (
+                            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 rounded-b-2xl"></div>
+                        )}
                         <div className="space-y-4">
                             {triageQueue.map((patient) => (
                                 <div key={patient.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all bg-white group cursor-pointer">

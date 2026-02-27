@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Download, FileText, Loader2, AlertCircle, Eye, X } from "lucide-react";
+import { Download, FileText, Loader2, AlertCircle, Eye, X, Activity, TrendingUp, TrendingDown } from "lucide-react";
 import { getReports, downloadReportPdf } from "@/lib/api";
 import type { Report } from "@/types";
 import { Portal } from "@/components/ui/portal";
@@ -12,6 +12,7 @@ export function PatientReports() {
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const [viewingId, setViewingId] = useState<string | null>(null);
     const [viewPdfUrl, setViewPdfUrl] = useState<string | null>(null);
+    const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
 
     useEffect(() => {
         fetchReports();
@@ -143,8 +144,13 @@ export function PatientReports() {
                                     <td className="py-4 px-6">
                                         {report.patient_details?.name ? (
                                             <div>
-                                                <div className="text-sm font-bold text-slate-900">{report.patient_details.name}</div>
-                                                <div className="text-xs text-slate-500 font-medium">
+                                                <button
+                                                    onClick={() => setSelectedPatient(report.patient_details?.name || null)}
+                                                    className="text-sm font-bold text-indigo-600 hover:text-indigo-800 underline decoration-indigo-200 underline-offset-4 text-left focus:outline-none"
+                                                >
+                                                    {report.patient_details.name}
+                                                </button>
+                                                <div className="text-xs text-slate-500 font-medium mt-0.5">
                                                     {report.patient_details.age ? `${report.patient_details.age}y` : ''}
                                                     {report.patient_details.gender ? ` • ${report.patient_details.gender}` : ''}
                                                 </div>
@@ -220,6 +226,99 @@ export function PatientReports() {
                     </div>
                 </Portal>
             )}
+
+            {/* Longitudinal Progression Modal */}
+            {selectedPatient && (() => {
+                const timeline = reports.filter(r => r.patient_details?.name === selectedPatient).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+                return (
+                    <Portal>
+                        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+                            <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200">
+                                <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                                    <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                        <Activity className="w-6 h-6 text-indigo-600" />
+                                        Longitudinal Progression: {selectedPatient}
+                                    </h3>
+                                    <button onClick={() => setSelectedPatient(null)} className="p-2 hover:bg-slate-200 rounded-full transition-colors group focus:outline-none">
+                                        <X className="w-5 h-5 text-slate-500 group-hover:text-slate-700" />
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50 space-y-8">
+                                    {timeline.map((rpt, idx) => {
+                                        const prevRpt = idx > 0 ? timeline[idx - 1] : null;
+                                        // Hack to access severity_index via risk_assessment any, or optional chaining
+                                        const currentRSI = rpt.risk_assessment?.severity_index;
+                                        const prevRSI = prevRpt?.risk_assessment?.severity_index;
+
+                                        let rsiDelta = null;
+                                        if (currentRSI !== undefined && prevRSI !== undefined) {
+                                            rsiDelta = currentRSI - prevRSI;
+                                        }
+
+                                        return (
+                                            <div key={rpt.report_id} className="relative pl-8">
+                                                {/* Connecting Line */}
+                                                {idx !== timeline.length - 1 && (
+                                                    <div className="absolute left-[3px] top-8 bottom-[-2rem] w-[2px] bg-indigo-100" />
+                                                )}
+                                                {/* Dot */}
+                                                <div className="absolute left-[-2px] top-6 w-3 h-3 rounded-full bg-indigo-500 ring-4 ring-slate-50" />
+
+                                                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-shadow hover:shadow-md">
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <div>
+                                                            <div className="text-sm font-bold text-slate-500 mb-1">{format(new Date(rpt.timestamp), "MMM dd, yyyy • hh:mm a")}</div>
+                                                            <h4 className="text-lg font-extrabold text-slate-800">Scan ID: {rpt.report_id}</h4>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-full mb-2">
+                                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: rpt.risk_assessment?.risk_color }} />
+                                                                <span className="text-xs font-bold text-slate-700">{rpt.risk_assessment?.risk_level}</span>
+                                                            </div>
+                                                            {currentRSI !== undefined && (
+                                                                <div className="text-sm font-bold text-slate-600 flex items-center justify-end gap-2">
+                                                                    <span>RSI: {Number(currentRSI).toFixed(1)}</span>
+                                                                    {rsiDelta !== null && Math.abs(rsiDelta) > 0.1 && (
+                                                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-extrabold ${rsiDelta > 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                                            {rsiDelta > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                                                            {Math.abs(rsiDelta).toFixed(1)}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4 mt-4">
+                                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Primary Findings & Confidence</span>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {Object.entries(rpt.disease_probabilities || {}).filter(([_, p]) => p > 0.5).map(([d, p]) => (
+                                                                    <span key={d} className="px-2 py-1 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 shadow-sm">
+                                                                        {d} ({(p * 100).toFixed(1)}%)
+                                                                    </span>
+                                                                ))}
+                                                                {Object.entries(rpt.disease_probabilities || {}).filter(([_, p]) => p > 0.5).length === 0 && (
+                                                                    <span className="text-sm font-medium text-slate-500 italic">No acute findings.</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+                                                            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block mb-2">AI Clinical Synthesis</span>
+                                                            <p className="text-sm font-medium text-slate-700 line-clamp-3">
+                                                                {rpt.ai_summary ? rpt.ai_summary.substring(0, 150) + "..." : "AI Summary unavailable or currently synthesizing."}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </Portal>
+                );
+            })()}
         </div>
     );
 }

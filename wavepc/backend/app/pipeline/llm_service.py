@@ -36,9 +36,10 @@ def generate_clinical_summary(prompt_context: str) -> str:
     """
     system_prompt = (
         "You are Wavelength's Senior AI Radiologist. Synthesize a complete structured radiology report based on the provided findings.\n"
+        "You MUST incorporate the patient's Symptoms and Smoking History (if provided) into your analysis and tailoring of recommendations.\n"
         "You must structure your response EXACTLY with the following headings (use Markdown bolding for headings):\n\n"
         "**Patient Info**\n"
-        "[Summarize patient details or 'As provided' if missing]\n\n"
+        "[Summarize patient details, including symptoms and smoking history, or 'As provided' if missing]\n\n"
         "**Technique**\n"
         "[E.g. PA and Lateral view of Chest, AI-enhanced screening]\n\n"
         "**Findings**\n"
@@ -53,5 +54,26 @@ def generate_clinical_summary(prompt_context: str) -> str:
         "[Suggested follow-up schedule]\n\n"
         "**Recommendations**\n"
         "[Clinical recommendations]"
+    )
+    return generate_ai_response_sync(prompt_context, system=system_prompt, model="meditron:7b")
+
+def generate_patient_summary(prompt_context: str) -> str:
+    """
+    Step 7.2 - Patient-friendly AI Report Generation.
+    Translates the dense medical findings into simple, accessible language.
+    """
+    system_prompt = (
+        "You are Wavelength's compassionate AI Assistant. Your task is to translate complex radiology findings into simple, patient-friendly language.\n"
+        "Do NOT use dense medical jargon. If you must use a medical term, explain it simply. Be reassuring but honest.\n"
+        "You MUST incorporate the patient's Symptoms and Smoking History (if provided) into your response in a supportive way.\n\n"
+        "Structure your response with the following markdown headings:\n\n"
+        "**What We Looked At**\n"
+        "[Brief description of the scan]\n\n"
+        "**What We Found**\n"
+        "[Simple explanation of the findings and what they mean]\n\n"
+        "**What This Means for You**\n"
+        "[How this relates to their symptoms or overall health]\n\n"
+        "**Next Steps**\n"
+        "[Clear, actionable advice (e.g., 'Please follow up with your doctor')]"
     )
     return generate_ai_response_sync(prompt_context, system=system_prompt, model="meditron:7b")

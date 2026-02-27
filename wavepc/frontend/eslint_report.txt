@@ -1,0 +1,102 @@
+
+> frontend@0.1.0 lint
+> eslint
+
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\results\result-modal.tsx
+  266:65  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\results\vision-chat.tsx
+  18:30  warning  'reportId' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\ui\portal.tsx
+  14:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\ui\portal.tsx:14:9
+  12 |
+  13 |     useEffect(() => {
+> 14 |         setMounted(true);
+     |         ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  15 |         return () => setMounted(false);
+  16 |     }, []);
+  17 |  react-hooks/set-state-in-effect
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\ai-chat.tsx
+  74:9  warning  The 'messages' logical expression could make the dependencies of useEffect Hook (at line 113) change on every render. To fix this, wrap the initialization of 'messages' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\ai-summary.tsx
+    4:28   warning  'AlertTriangle' is defined but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+    4:71   warning  'ImageIcon' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+    4:112  warning  'X' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+    4:128  warning  'FileText' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+  205:45   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+  205:317  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+  249:79   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  294:75   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  335:85   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  338:57   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\developer-mode.tsx
+    3:20  warning  'useEffect' is defined but never used        @typescript-eslint/no-unused-vars
+    4:18  warning  'AnimatePresence' is defined but never used  @typescript-eslint/no-unused-vars
+    5:41  warning  'Wifi' is defined but never used             @typescript-eslint/no-unused-vars
+  257:96  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\ehr-sync.tsx
+    2:38   warning  'ShieldCheck' is defined but never used                          @typescript-eslint/no-unused-vars
+  107:189  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  107:202  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  109:191  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  109:208  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  169:64   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  169:88   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\learn.tsx
+    3:98  warning  'ArrowRight' is defined but never used                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+  134:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\new-scan.tsx
+    3:73  warning  'ImageIcon' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+    3:94  warning  'Database' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+    5:10  warning  'ImageViewer' is defined but never used                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+    6:10  warning  'DiseaseTable' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+    7:10  warning  'RiskBadge' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+    8:10  warning  'UncertaintyIndicator' is defined but never used                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+    9:10  warning  'DiseaseTimeline' is defined but never used                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+   10:10  warning  'ReportDownload' is defined but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+   14:8   warning  'ReactMarkdown' is defined but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   34:12  warning  'preview' is assigned a value but never used                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  100:8   warning  React Hook useCallback has a missing dependency: 'onHistoryUpdate'. Either include it or remove the dependency array. If 'onHistoryUpdate' changes too often, find the parent component that defines it and wrap that definition in useCallback                                          react-hooks/exhaustive-deps
+  108:9   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+  422:45  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\patient-reports.tsx
+   49:18   warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+   62:18   warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+  250:84   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  251:86   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  295:123  warning  '_' is defined but never used             @typescript-eslint/no-unused-vars
+  300:123  warning  '_' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\training-mode.tsx
+  45:18  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\upload-history.tsx
+  48:18  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+  61:18  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Nishchal Soni\Downloads\wavelength\frontend\src\components\views\worklist.tsx
+   76:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  103:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  104:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  105:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Γ£û 53 problems (19 errors, 34 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

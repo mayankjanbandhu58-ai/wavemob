@@ -15,7 +15,7 @@ from typing import Dict, List, Optional
 import numpy as np
 from fpdf import FPDF
 
-from app.config import DISEASE_LABELS
+from app.config import DISEASE_LABELS, ICD10_MAPPING
 
 logger = logging.getLogger("wavelength.report_generator")
 
@@ -44,11 +44,15 @@ class ClinicalReport:
         self.calibrated = calibrated
         self.model_version = model_version
         self.patient_details = patient_details or {}
+        self.differential_diagnoses = []
         self.justifications = {}
         self.ai_summary = ""
+        self.ai_patient_summary = ""
         self.ai_second_opinion = ""
         self.similar_cases = []
         self.images = {}
+        self.verification_status = "pending_review"
+        self.reviewer_notes = ""
 
     def to_dict(self) -> Dict:
         """Serialize report to JSON-compatible dict."""
@@ -58,14 +62,18 @@ class ClinicalReport:
             "model_version": self.model_version,
             "calibrated": self.calibrated,
             "disease_probabilities": self.disease_probabilities,
+            "differential_diagnoses": self.differential_diagnoses,
             "justifications": self.justifications,
             "risk_assessment": self.risk_assessment,
             "uncertainty": self.uncertainty,
             "patient_details": self.patient_details,
             "ai_summary": self.ai_summary,
+            "ai_patient_summary": self.ai_patient_summary,
             "ai_second_opinion": self.ai_second_opinion,
             "similar_cases": self.similar_cases,
             "images": self.images,
+            "verification_status": self.verification_status,
+            "reviewer_notes": self.reviewer_notes,
             "disclaimer": self._get_disclaimer(),
         }
 
@@ -144,6 +152,13 @@ def generate_report(
     )
     
     report.justifications = justifications
+
+    # Calculate differential diagnoses (top 3)
+    sorted_probs = sorted(disease_probs.items(), key=lambda x: x[1], reverse=True)
+    report.differential_diagnoses = [
+        {"disease": k, "probability": v, "icd10": ICD10_MAPPING.get(k, "")}
+        for k, v in sorted_probs[:3]
+    ]
 
     logger.info(f"Generated report {report_id} | Risk: {risk_assessment.get('risk_level', 'Unknown')}")
     return report
@@ -270,5 +285,7 @@ def generate_pdf_report(report: ClinicalReport) -> bytes:
     pdf.cell(0, 10, "Important Disclaimer", ln=True)
     pdf.set_font("Helvetica", "", 9)
     pdf.multi_cell(0, 5, report._get_disclaimer())
-
-    return pdf.output()
+    pdf_output = pdf.output(dest='S')
+    if isinstance(pdf_output, str):
+        return pdf_output.encode('latin-1')
+    return bytes(pdf_output)

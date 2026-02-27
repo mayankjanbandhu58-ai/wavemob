@@ -12,12 +12,13 @@ from typing import List
 
 import numpy as np
 import torch
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, BackgroundTasks
 from fastapi.responses import JSONResponse
 
 from app.config import DISEASE_LABELS, MC_DROPOUT_PASSES
 from app.state import app_state
 from app.pipeline.gradcam import heatmap_to_base64
+from app.pipeline.llm_service import generate_clinical_summary, generate_ai_response_sync, generate_patient_summary
 from app.pipeline.report_generator import generate_report
 from app.pipeline.uncertainty import classify_uncertainty, mc_dropout_inference
 from app.utils.image_utils import (
@@ -34,12 +35,15 @@ router = APIRouter()
 
 @router.post("/predict")
 async def predict(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     patient_name: str = Form(None),
     patient_age: str = Form(None),
     patient_gender: str = Form(None),
     patient_phone: str = Form(None),
     patient_address: str = Form(None),
+    symptoms: str = Form(None),
+    smoking_history: str = Form(None),
 ):
     """
     Analyze a single chest X-ray image.
@@ -197,13 +201,15 @@ async def predict(
 
         # Compile patient details
         patient_details = None
-        if patient_name or patient_age or patient_gender or patient_phone or patient_address:
+        if patient_name or patient_age or patient_gender or patient_phone or patient_address or symptoms or smoking_history:
             patient_details = {
                 "name": patient_name,
                 "age": patient_age,
                 "gender": patient_gender,
                 "phone": patient_phone,
-                "address": patient_address
+                "address": patient_address,
+                "symptoms": symptoms,
+                "smoking_history": smoking_history
             }
 
         # Generate report
@@ -215,37 +221,91 @@ async def predict(
             patient_details=patient_details,
         )
 
-        ai_second_opinion = "Analyzing..."
-        # Step 10 & 11: Generate AI Summaries and Second Opinions
-        try:
-            from app.pipeline.llm_service import generate_clinical_summary, generate_ai_response_sync
-            import asyncio
-            
-            prompt_summary = f"Patient Name: {patient_name or 'Unknown'}, Age: {patient_age or 'Unknown'}.\n"
-            prompt_summary += f"Disease Probabilities: {', '.join([f'{d}: {float(probabilities[i]):.1%}' for i, d in enumerate(DISEASE_LABELS) if float(probabilities[i]) > 0.05])}\n"
-            prompt_summary += f"Risk Level: {risk_assessment.get('risk_level')}, Score: {risk_assessment.get('risk_score')}\n"
-            
-            sim_cases_text = ", ".join([f"{c['diagnosis']} (sim: {c['similarity']:.2f})" for c in similar_cases])
-            prompt_opinion = f"Neural Network Predictions:\n{prompt_summary}\n"
-            prompt_opinion += f"Most Visually Similar Historical Cases from NIH Dataset:\n{sim_cases_text}\n"
-            prompt_opinion += f"Model Uncertainty: {uncertainty_data.get('overall_uncertainty', 'unknown')} variance.\n\n"
-            prompt_opinion += "Based on this data, act as a senior medical reviewing radiologist. Provide a 2-paragraph comparative second opinion. Discuss whether the visual similarities in historical dataset cases support or contradict the neural network's top predictions. Note any discrepancies and suggest focus areas for the attending physician."
-            
-            system_op = "You are Wavelength's Senior AI Radiologist providing a highly clinical and analytical comparative second opinion."
-            
-            summary_task = asyncio.to_thread(generate_clinical_summary, prompt_summary)
-            opinion_task = asyncio.to_thread(generate_ai_response_sync, prompt_opinion, system_op, "meditron:7b", 2)
-            
-            summary_text, opinion_text = await asyncio.gather(summary_task, opinion_task)
-            
-            report.ai_summary = summary_text
-            ai_second_opinion = opinion_text
-        except Exception as e:
-            logger.error(f"Failed to generate LLM summary: {e}")
-            report.ai_summary = "AI Summary unavailable."
-            ai_second_opinion = "Second opinion synthesis failed."
+        # Store report here first so background task can access it
+        app_state.reports[report.report_id] = report
+        from app.utils.storage import save_report
+        save_report(report)
 
-        # Bind rich multimedia payload to report
+        ai_second_opinion = "Analyzing in background..."
+        report.ai_summary = "AI Summary is generating in the background. Please check the AI Summary tab shortly."
+        report.ai_patient_summary = "Patient Summary is generating in the background."
+        
+        # Step 10 & 11: Generate AI Summaries and Second Opinions in the BACKGROUND
+        def _bg_generate(report_id: str, p_summary: str, p_opinion: str, sys_op: str):
+            try:
+                import threading
+                
+                # Doing this sequentially in a bg thread to avoid blasting Ollama with concurrent requests 
+                # resolving the massive slow down when invoking two 7B models at the exact moment.
+                
+                # 1. Clinical Summary
+                try:
+                    logger.info("Generating Clinical Summary via Meditron...")
+                    ai_summary = generate_clinical_summary(p_summary)
+                    if report_id in app_state.reports:
+                        app_state.reports[report_id].ai_summary = ai_summary
+                except Exception as e:
+                    logger.error(f"Clinical summary generation failed: {e}")
+                    if report_id in app_state.reports:
+                        app_state.reports[report_id].ai_summary = "Clinical summary failed."
+
+                # 2. Patient Summary
+                try:
+                    logger.info("Generating Patient Summary via Meditron...")
+                    ai_patient_summary = generate_patient_summary(p_summary)
+                    if report_id in app_state.reports:
+                        app_state.reports[report_id].ai_patient_summary = ai_patient_summary
+                except Exception as e:
+                    logger.error(f"Patient summary generation failed: {e}")
+                    if report_id in app_state.reports:
+                        app_state.reports[report_id].ai_patient_summary = "Patient summary failed."
+
+                # 3. Second Opinion
+                try:
+                    logger.info("Generating Second Opinion via Meditron...")
+                    ai_second_opinion = generate_ai_response_sync(p_opinion, sys_op, "meditron:7b", 2)
+                    if report_id in app_state.reports:
+                        app_state.reports[report_id].ai_second_opinion = ai_second_opinion
+                except Exception as e:
+                    logger.error(f"Second opinion generation failed: {e}")
+                    app_state.reports[report_id].ai_second_opinion = "Second opinion synthesis failed."
+                
+                from app.utils.storage import save_report
+                if report_id in app_state.reports:
+                    save_report(app_state.reports[report_id])
+
+            except Exception as e:
+                logger.error(f"Background LLM summary failed: {e}")
+                if report_id in app_state.reports:
+                    app_state.reports[report_id].ai_summary = "AI Summary unavailable."
+                    app_state.reports[report_id].ai_patient_summary = "Patient Summary unavailable."
+                    app_state.reports[report_id].ai_second_opinion = "Second opinion synthesis failed."
+
+        prompt_summary = f"Patient Name: {patient_name or 'Unknown'}, Age: {patient_age or 'Unknown'}.\n"
+        if symptoms:
+            prompt_summary += f"Symptoms: {symptoms}.\n"
+        if smoking_history:
+            prompt_summary += f"Smoking History: {smoking_history}.\n"
+        prompt_summary += f"Disease Probabilities: {', '.join([f'{d}: {float(probabilities[i]):.1%}' for i, d in enumerate(DISEASE_LABELS) if float(probabilities[i]) > 0.05])}\n"
+        prompt_summary += f"Risk Level: {risk_assessment.get('risk_level')}, Score: {risk_assessment.get('risk_score')}\n"
+        
+        sim_cases_text = ", ".join([f"{c['diagnosis']} (sim: {c['similarity']:.2f})" for c in similar_cases])
+        prompt_opinion = f"Neural Network Predictions:\n{prompt_summary}\n"
+        prompt_opinion += f"Most Visually Similar Historical Cases from NIH Dataset:\n{sim_cases_text}\n"
+        prompt_opinion += f"Model Uncertainty: {uncertainty_data.get('overall_uncertainty', 'unknown')} variance.\n\n"
+        prompt_opinion += "Based on this data, act as a senior medical reviewing radiologist. Provide a 2-paragraph comparative second opinion. Discuss whether the visual similarities in historical dataset cases support or contradict the neural network's top predictions. Note any discrepancies and suggest focus areas for the attending physician."
+        
+        system_op = "You are Wavelength's Senior AI Radiologist providing a highly clinical and analytical comparative second opinion."
+        
+        background_tasks.add_task(
+            _bg_generate, 
+            report.report_id, 
+            prompt_summary, 
+            prompt_opinion, 
+            system_op
+        )
+
+        # Bind rich multimedia payload to report 
         report.ai_second_opinion = ai_second_opinion
         report.similar_cases = similar_cases
         report.images = {
@@ -253,9 +313,6 @@ async def predict(
             "segmentation_overlay": segmentation_overlay_b64,
             "heatmap": heatmap_b64,
         }
-
-        # Store report
-        app_state.reports[report.report_id] = report
 
         elapsed = time.time() - start_time
 
@@ -267,6 +324,7 @@ async def predict(
                 label: round(float(probabilities[i]), 4)
                 for i, label in enumerate(DISEASE_LABELS)
             },
+            "differential_diagnoses": report.differential_diagnoses,
             "justifications": report.justifications,
             "risk_assessment": risk_assessment,
             "uncertainty": uncertainty_data,

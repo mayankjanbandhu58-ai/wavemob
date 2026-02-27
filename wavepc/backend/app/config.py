@@ -48,6 +48,20 @@ DISEASE_LABELS = [
 NUM_CLASSES = len(DISEASE_LABELS)
 
 # ──────────────────────────────────────────────
+# ICD-10 Mapping
+# ──────────────────────────────────────────────
+ICD10_MAPPING = {
+    "Atelectasis": "J98.11",
+    "Cardiomegaly": "I51.7",
+    "Effusion": "J90",
+    "Infiltration": "J18.9",
+    "Mass": "R22.2",
+    "Nodule": "R91.1",
+    "Pneumonia": "J18.9",
+    "Pneumothorax": "J93.9",
+}
+
+# ──────────────────────────────────────────────
 # Image Preprocessing
 # ──────────────────────────────────────────────
 IMAGE_SIZE = 224  # Input resolution for DenseNet/EfficientNet

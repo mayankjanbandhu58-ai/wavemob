@@ -16,6 +16,7 @@ export function DiseaseTimeline({ topDisease }: DiseaseTimelineProps) {
 
     useEffect(() => {
         if (!topDisease || topDisease === "No Finding") return;
+        setSelectedStage(0);
 
         const fetchData = async () => {
             setLoading(true);
