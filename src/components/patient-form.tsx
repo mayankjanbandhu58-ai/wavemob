@@ -34,7 +34,7 @@ export function PatientForm({ data, onChange, disabled }: PatientFormProps) {
 
     const labelStyle: React.CSSProperties = {
         display: "block",
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: 700,
         color: "#555555",
         marginBottom: 8,
@@ -68,7 +68,7 @@ export function PatientForm({ data, onChange, disabled }: PatientFormProps) {
                     <label style={labelStyle}>Full Name <span style={{ color: "#DC2626" }}>*</span></label>
                     <input
                         type="text" name="name" value={data.name} onChange={handle} disabled={disabled}
-                        placeholder="e.g., Rahul Sharma"
+                        placeholder="Enter full name"
                         style={{ ...inputStyle, border: data.name ? "1.5px solid #C5CC9A" : "1.5px solid #DDDDD5" }}
                         onFocus={e => { e.target.style.borderColor = "#636B2F"; e.target.style.boxShadow = "0 0 0 3px rgba(99,107,47,0.1)"; }}
                         onBlur={e => { e.target.style.borderColor = data.name ? "#C5CC9A" : "#DDDDD5"; e.target.style.boxShadow = "none"; }}
@@ -107,7 +107,7 @@ export function PatientForm({ data, onChange, disabled }: PatientFormProps) {
                     <label style={labelStyle}>Phone <span style={{ fontSize: 10, color: "#AAAAAA", textTransform: "none" as const, letterSpacing: 0, fontWeight: 400 }}>(optional)</span></label>
                     <input
                         type="tel" name="phone" value={data.phone ?? ""} onChange={handle} disabled={disabled}
-                        placeholder="+91 98765 43210" style={inputStyle}
+                        placeholder="Phone number" style={inputStyle}
                         onFocus={e => { e.target.style.borderColor = "#636B2F"; e.target.style.boxShadow = "0 0 0 3px rgba(99,107,47,0.1)"; }}
                         onBlur={e => { e.target.style.borderColor = "#DDDDD5"; e.target.style.boxShadow = "none"; }}
                     />

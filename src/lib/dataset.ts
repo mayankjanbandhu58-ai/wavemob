@@ -167,7 +167,7 @@ export function generateSimulatedReport(
         aiSummaryPatient: PATIENT_NARRATIVES[risk],
         clinicalGuideline: GUIDELINES[risk],
         reportId: generateReportId(filename),
-        pdfUrl: `/dataset/reports/${encodeURIComponent(filename.replace(/\.(png|jpg|jpeg)$/i, ""))}.pdf`,
+        pdfUrl: `/dataset/${encodeURIComponent(filename.replace(/\.(png|jpg|jpeg)$/i, ""))}.pdf`,
     };
 }
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, FileText, Download, RotateCcw, Activity, ChevronRight, ShieldAlert } from "lucide-react";
+import { Sparkles, Download, RotateCcw, Activity, ChevronRight, ShieldAlert, Loader2 } from "lucide-react";
 import { DiseaseTable } from "@/components/disease-table";
 import { RiskBadge } from "@/components/risk-badge";
 import type { SimulatedReport } from "@/lib/dataset";
@@ -15,6 +15,74 @@ interface AiReportProps {
 
 type SummaryMode = "clinical" | "patient";
 
+import { generateReportPdf } from "@/lib/pdf-generator";
+
+/* ── Robust PDF download for Android Capacitor ────────────────
+   Strategy A (native): generate Blob → base64 → Filesystem.writeFile → Share
+   Strategy B (browser): generate Blob → hidden <a> click with download attr
+   NEVER uses window.open (breaks WebView navigation + back button)
+────────────────────────────────────────────────────────────── */
+async function downloadPdf(report: SimulatedReport, imageBase64: string, filename: string) {
+    let blob: Blob;
+    try {
+        // Generate PDF on the fly using jspdf — 100% reliable, no network requests
+        blob = generateReportPdf(report, imageBase64);
+    } catch (err) {
+        console.error("PDF generation failed:", err);
+        alert("Could not generate the report PDF. Please try again.");
+        return;
+    }
+
+    // ── Strategy A: Native Capacitor (Android APK) ──
+    try {
+        const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve((reader.result as string).split(",")[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+
+        const { Filesystem, Directory } = await import("@capacitor/filesystem");
+        const { Share } = await import("@capacitor/share");
+
+        const result = await Filesystem.writeFile({
+            path: filename,
+            data: base64,
+            directory: Directory.Cache,
+            recursive: true,
+        });
+
+        await Share.share({
+            title: filename,
+            text: "Wavelength AI — Chest X-Ray Report",
+            url: result.uri,
+            dialogTitle: "Save or open your report",
+        });
+        return; // success — exit early
+    } catch {
+        // Capacitor not available or failed → fall through to browser method
+    }
+
+    // ── Strategy B: Browser fallback (hidden <a> blob download) ──
+    try {
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = filename;
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+        }, 500);
+    } catch {
+        alert("Download failed. Please try again.");
+    }
+}
+
+
+
 const TIMELINE = [
     { date: "Jan 15", label: "Initial" },
     { date: "Jan 28", label: "Fup #1" },
@@ -25,6 +93,14 @@ const TIMELINE = [
 
 export function AiReport({ report, imagePreview, onNewScan }: AiReportProps) {
     const [mode, setMode] = useState<SummaryMode>("clinical");
+    const [downloading, setDownloading] = useState(false);
+
+    const handleDownload = async () => {
+        setDownloading(true);
+        const name = `Wavelength-${report.patientData.name || "Report"}-${report.reportId}.pdf`;
+        await downloadPdf(report, imagePreview, name);
+        setDownloading(false);
+    };
 
     return (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
@@ -53,15 +129,19 @@ export function AiReport({ report, imagePreview, onNewScan }: AiReportProps) {
                     </div>
                 </div>
 
-                {/* PDF Buttons */}
-                <div className="px-5 pb-5 grid grid-cols-2 gap-3">
-                    <motion.button whileTap={{ scale: 0.97 }} onClick={() => window.open(report.pdfUrl, "_blank")}
-                        className="btn-primary text-sm py-3">
-                        <FileText className="w-4 h-4" /> View PDF
+                {/* Download Report — native Capacitor download */}
+                <div className="px-5 pb-5">
+                    <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        onClick={handleDownload}
+                        disabled={downloading}
+                        className="btn-primary"
+                        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 15, padding: "14px 20px", width: "100%", border: "none", cursor: downloading ? "not-allowed" : "pointer", opacity: downloading ? 0.8 : 1 }}
+                    >
+                        {downloading
+                            ? <><Loader2 style={{ width: 20, height: 20, animation: "spin 1s linear infinite" }} /> Preparing…</>
+                            : <><Download style={{ width: 20, height: 20 }} /> Download Report</>}
                     </motion.button>
-                    <motion.a whileTap={{ scale: 0.97 }} href={report.pdfUrl} download className="btn-secondary text-sm py-3">
-                        <Download className="w-4 h-4" /> Download
-                    </motion.a>
                 </div>
             </div>
 
