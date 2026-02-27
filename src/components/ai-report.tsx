@@ -16,191 +16,147 @@ interface AiReportProps {
 type SummaryMode = "clinical" | "patient";
 
 const TIMELINE = [
-    { date: "Jan 15", label: "Initial scan", status: "done" },
-    { date: "Jan 28", label: "Follow-up #1", status: "done" },
-    { date: "Feb 10", label: "Follow-up #2", status: "done" },
-    { date: "Feb 20", label: "Follow-up #3", status: "done" },
-    { date: "Feb 27", label: "Current", status: "current" },
+    { date: "Jan 15", label: "Initial" },
+    { date: "Jan 28", label: "Fup #1" },
+    { date: "Feb 10", label: "Fup #2" },
+    { date: "Feb 20", label: "Fup #3" },
+    { date: "Feb 27", label: "Current" },
 ];
 
 export function AiReport({ report, imagePreview, onNewScan }: AiReportProps) {
     const [mode, setMode] = useState<SummaryMode>("clinical");
 
-    const riskGlow =
-        report.riskLevel === "High Suspicion" ? "glow-red" :
-            report.riskLevel === "Moderate Risk" ? "glow-amber" : "glow-green";
-
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-4"
-        >
-            {/* ── Patient / Scan Header Card ──────────────── */}
-            <div className="glass-strong rounded-2xl overflow-hidden">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+
+            {/* ── Patient Header ─────────────────────────── */}
+            <div className="bg-white rounded-2xl overflow-hidden" style={{ border: "1px solid #E5E5DC", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
                 <div className="px-5 pt-5 pb-4">
                     <div className="flex items-start gap-4">
-                        {/* X-ray thumb */}
-                        <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-black border border-white/10 shrink-0">
+                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-900 shrink-0" style={{ border: "1px solid #E5E5DC" }}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={imagePreview} alt="X-Ray" className="w-full h-full object-cover opacity-80" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                            <div className="absolute bottom-1 left-1 right-1 h-0.5 bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent" />
+                            <img src={imagePreview} alt="X-Ray" className="w-full h-full object-cover" />
                         </div>
-
                         <div className="flex-1 min-w-0">
-                            <h2 className="text-sm font-bold text-white mb-0.5 truncate">
-                                {report.patientData.name || "Anonymous Patient"}
-                            </h2>
-                            <p className="text-[10px] text-white/40">
+                            <h2 className="text-base font-bold text-gray-900 truncate">{report.patientData.name || "Anonymous Patient"}</h2>
+                            <p className="text-xs text-gray-500 mt-0.5">
                                 {report.patientData.age && `Age ${report.patientData.age}`}
                                 {report.patientData.gender && ` · ${report.patientData.gender}`}
                             </p>
                             {report.patientData.symptoms && (
-                                <p className="text-[10px] text-white/30 mt-1.5 bg-white/4 rounded-lg px-2 py-1 border border-white/6">
-                                    <span className="text-white/50 font-bold">Symptoms:</span> {report.patientData.symptoms}
+                                <p className="text-[10px] text-gray-600 mt-1.5 px-2 py-1 rounded-lg" style={{ background: "#F0F0E8", border: "1px solid #E5E5DC" }}>
+                                    <span className="font-bold">Symptoms:</span> {report.patientData.symptoms}
                                 </p>
                             )}
-                            <p className="text-[9px] font-mono text-blue-400/50 mt-1.5">{report.reportId}</p>
+                            <p className="text-[9px] font-mono mt-1.5" style={{ color: "#636B2F" }}>{report.reportId}</p>
                         </div>
                     </div>
                 </div>
 
-                {/* PDF buttons */}
+                {/* PDF Buttons */}
                 <div className="px-5 pb-5 grid grid-cols-2 gap-3">
-                    <motion.button
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => window.open(report.pdfUrl, "_blank")}
-                        className="btn-primary py-3 text-xs"
-                    >
-                        <FileText className="w-4 h-4" />
-                        View PDF Report
+                    <motion.button whileTap={{ scale: 0.97 }} onClick={() => window.open(report.pdfUrl, "_blank")}
+                        className="btn-primary text-sm py-3">
+                        <FileText className="w-4 h-4" /> View PDF
                     </motion.button>
-                    <motion.a
-                        whileTap={{ scale: 0.97 }}
-                        href={report.pdfUrl}
-                        download
-                        className="btn-secondary py-3 text-xs"
-                    >
-                        <Download className="w-4 h-4" />
-                        Download PDF
+                    <motion.a whileTap={{ scale: 0.97 }} href={report.pdfUrl} download className="btn-secondary text-sm py-3">
+                        <Download className="w-4 h-4" /> Download
                     </motion.a>
                 </div>
             </div>
 
-            {/* ── Risk Badge ──────────────────────────────── */}
+            {/* ── Risk Badge ─────────────────────────────── */}
             <RiskBadge report={report} />
 
-            {/* ── Disease Table ───────────────────────────── */}
+            {/* ── Disease Table ──────────────────────────── */}
             <DiseaseTable diseases={report.diseases} showDifferential={true} />
 
-            {/* ── Clinical Guideline ──────────────────────── */}
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="glass rounded-2xl p-5 border border-blue-500/15"
-            >
+            {/* ── Clinical Guideline ─────────────────────── */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                className="rounded-2xl p-5" style={{ background: "#EEF0E0", border: "1px solid #C5CC9A" }}>
                 <div className="flex items-center gap-2 mb-3">
-                    <Activity className="w-4 h-4 text-blue-400" />
-                    <h3 className="text-xs font-bold text-blue-300 uppercase tracking-wider">
+                    <Activity className="w-4 h-4" style={{ color: "#636B2F" }} />
+                    <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: "#636B2F" }}>
                         Clinical Next Step
-                        <span className="ml-2 text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded uppercase">Guideline</span>
+                        <span className="ml-2 text-[9px] px-2 py-0.5 rounded uppercase font-bold"
+                            style={{ background: "#C5CC9A", color: "#3a400f" }}>Guideline</span>
                     </h3>
                 </div>
-                <p className="text-xs text-white/50 leading-relaxed bg-white/3 rounded-xl p-3 border border-white/5">
+                <p className="text-sm text-gray-800 leading-relaxed bg-white rounded-xl p-3" style={{ border: "1px solid #D8DBA8" }}>
                     {report.clinicalGuideline}
                 </p>
             </motion.div>
 
-            {/* ── AI Narrative ────────────────────────────── */}
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="glass-strong rounded-2xl overflow-hidden"
-            >
+            {/* ── AI Narrative ───────────────────────────── */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+                className="bg-white rounded-2xl overflow-hidden" style={{ border: "1px solid #E5E5DC", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                 {/* Tab header */}
-                <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+                <div className="px-5 py-4 flex items-center justify-between" style={{ background: "#F5F5EF", borderBottom: "1px solid #E5E5DC" }}>
                     <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-blue-400" />
-                        <h3 className="text-sm font-bold text-white">AI Report Synthesis</h3>
+                        <Sparkles className="w-4 h-4" style={{ color: "#636B2F" }} />
+                        <h3 className="text-sm font-bold text-gray-900">AI Report Synthesis</h3>
                     </div>
-                    {/* Toggle */}
-                    <div className="flex items-center bg-white/5 rounded-lg p-0.5 border border-white/8">
+                    <div className="flex items-center bg-white rounded-lg p-0.5" style={{ border: "1px solid #E5E5DC" }}>
                         <button onClick={() => setMode("clinical")}
-                            className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-colors ${mode === "clinical" ? "bg-blue-600 text-white shadow-lg" : "text-white/30 hover:text-white/60"
-                                }`}>
+                            className="px-3 py-1.5 text-[10px] font-bold rounded-md transition-colors"
+                            style={{ background: mode === "clinical" ? "#636B2F" : "transparent", color: mode === "clinical" ? "#fff" : "#888" }}>
                             Clinical
                         </button>
                         <button onClick={() => setMode("patient")}
-                            className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-colors ${mode === "patient" ? "bg-emerald-600 text-white shadow-lg" : "text-white/30 hover:text-white/60"
-                                }`}>
+                            className="px-3 py-1.5 text-[10px] font-bold rounded-md transition-colors"
+                            style={{ background: mode === "patient" ? "#059669" : "transparent", color: mode === "patient" ? "#fff" : "#888" }}>
                             Patient
                         </button>
                     </div>
                 </div>
 
                 <AnimatePresence mode="wait">
-                    <motion.div key={mode} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}
-                        className="p-5"
-                    >
-                        <div className="text-xs text-white/50 leading-relaxed space-y-2">
+                    <motion.div key={mode} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }} className="p-5">
+                        <div className="text-sm text-gray-700 leading-relaxed space-y-2">
                             {(mode === "clinical" ? report.aiSummaryClinical : report.aiSummaryPatient)
-                                .split("\n")
-                                .map((line, i) => {
-                                    if (line.startsWith("## ")) {
-                                        return <h4 key={i} className="text-sm font-bold text-white/80 mt-4 mb-1 first:mt-0">{line.replace("## ", "")}</h4>;
-                                    }
-                                    if (line.trim() === "") return <div key={i} className="h-1" />;
+                                .split("\n").map((line, i) => {
+                                    if (line.startsWith("## ")) return <h4 key={i} className="text-base font-bold text-gray-900 mt-3 mb-1 first:mt-0">{line.replace("## ", "")}</h4>;
+                                    if (!line.trim()) return <div key={i} className="h-1" />;
                                     const parts = line.split(/\*\*(.+?)\*\*/g);
-                                    return (
-                                        <p key={i}>{parts.map((p, j) => j % 2 === 1 ? <strong key={j} className="text-white/80">{p}</strong> : p)}</p>
-                                    );
+                                    return <p key={i}>{parts.map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p)}</p>;
                                 })}
                         </div>
                     </motion.div>
                 </AnimatePresence>
 
                 {mode === "clinical" && (
-                    <div className="mx-5 mb-4 p-3 rounded-xl bg-red-500/8 border border-red-500/15">
+                    <div className="mx-5 mb-4 p-3 rounded-xl" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
                         <div className="flex items-start gap-2">
-                            <ShieldAlert className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
-                            <p className="text-[10px] text-red-300/70 leading-relaxed">
-                                AI-generated synthesis only. Requires radiologist verification before clinical action.
-                            </p>
+                            <ShieldAlert className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
+                            <p className="text-[10px] text-red-700 leading-relaxed">AI-generated synthesis only. Requires radiologist verification before clinical action.</p>
                         </div>
                     </div>
                 )}
             </motion.div>
 
-            {/* ── Longitudinal Timeline ───────────────────── */}
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="glass rounded-2xl p-5"
-            >
+            {/* ── Longitudinal Timeline ──────────────────── */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+                className="bg-white rounded-2xl p-5" style={{ border: "1px solid #E5E5DC" }}>
                 <div className="flex items-center gap-2 mb-5">
-                    <ChevronRight className="w-4 h-4 text-blue-400" />
-                    <h3 className="text-sm font-bold text-white">Longitudinal Tracking</h3>
+                    <ChevronRight className="w-4 h-4" style={{ color: "#636B2F" }} />
+                    <h3 className="text-sm font-bold text-gray-900">Longitudinal Tracking</h3>
                 </div>
-
                 <div className="relative">
-                    <div className="absolute top-2.5 left-2 right-2 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                    <div className="absolute top-2.5 left-4 right-4 h-px" style={{ background: "#E5E5DC" }} />
                     <div className="relative flex justify-between">
                         {TIMELINE.map((t, i) => {
-                            const isCurrentScan = t.status === "current";
+                            const isCurrent = i === TIMELINE.length - 1;
                             return (
-                                <div key={i} className="flex flex-col items-center gap-2" style={{ width: `${100 / TIMELINE.length}%` }}>
-                                    <div className={`w-5 h-5 rounded-full border-2 border-[#070d1f] z-10 shadow-md ${isCurrentScan
-                                            ? "bg-gradient-to-br " + (report.riskColor === "red" ? "from-red-500 to-red-400" : report.riskColor === "amber" ? "from-amber-500 to-amber-400" : "from-emerald-500 to-emerald-400")
-                                            : "bg-white/20"
-                                        } ${isCurrentScan ? "ring-2 ring-offset-1 ring-blue-500/50" : ""}`} />
-                                    <p className="text-[8px] text-white/25 font-medium">{t.date}</p>
-                                    <p className="text-[8px] text-white/40 font-bold text-center leading-tight">{t.label}</p>
+                                <div key={i} className="flex flex-col items-center gap-1.5" style={{ width: `${100 / TIMELINE.length}%` }}>
+                                    <div className="w-5 h-5 rounded-full z-10 border-2 border-white shadow-md"
+                                        style={{
+                                            background: isCurrent ? "#636B2F" : "#C5CC9A",
+                                            outline: isCurrent ? "2px solid #636B2F" : "none",
+                                            outlineOffset: 2,
+                                        }} />
+                                    <p className="text-[8px] text-gray-400">{t.date}</p>
+                                    <p className="text-[8px] font-bold text-gray-600 text-center">{t.label}</p>
                                 </div>
                             );
                         })}
@@ -208,13 +164,20 @@ export function AiReport({ report, imagePreview, onNewScan }: AiReportProps) {
                 </div>
             </motion.div>
 
-            {/* ── New Scan ─────────────────────────────────── */}
-            <motion.button whileTap={{ scale: 0.97 }} onClick={onNewScan}
-                className="w-full py-3 rounded-xl text-white/25 font-medium text-sm flex items-center justify-center gap-2 hover:text-white/50 hover:bg-white/4 transition-all border border-white/5"
-            >
+            {/* ── New Scan ───────────────────────────────── */}
+            <button onClick={onNewScan}
+                className="w-full py-3 rounded-xl text-sm font-medium text-gray-400 flex items-center justify-center gap-2 hover:text-gray-600 hover:bg-white transition-all"
+                style={{ border: "1px solid #E5E5DC" }}>
                 <RotateCcw className="w-4 h-4" />
                 Analyze Another Scan
-            </motion.button>
+            </button>
+
+            {/* Disclaimer */}
+            <div className="rounded-xl p-4 text-center" style={{ background: "#FFFBEB", border: "1px solid #FDE68A" }}>
+                <p className="text-[10px] text-amber-700">
+                    <strong>⚠ Clinical Disclaimer:</strong> For decision support only. All findings require physician review.
+                </p>
+            </div>
         </motion.div>
     );
 }
